@@ -1,0 +1,11 @@
+node_modules/
+venv/
+__pycache__/
+*.pyc
+.env
+data/raw/
+data/processed/
+artifacts/*.pkl
+.DS_Store
+dist/
+build/
