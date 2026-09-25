@@ -1,0 +1,16 @@
+{
+  "_instructions": "Map every raw (District, Market) string you encounter to one canonical form. Key format: 'District|RawMarketName'. Value: canonical market name. Add a new entry the moment clean_price_data.py warns about an unmapped market — do not let it fall through to the default (raw name used as-is).",
+
+  "Kolhapur|APMC Kolhapur": "Kolhapur",
+  "Kolhapur|APMC Vadgaonpeth": "Vadgaonpeth",
+  "Kolhapur|APMC Karveer": "Karveer",
+  "Kolhapur|Karveer": "Karveer",
+  "Kolhapur|Karveer APMC": "Karveer",
+
+  "Sangli|APMC Islampur": "Islampur",
+  "Sangli|APMC Palus": "Palus",
+  "Sangli|APMC Vita": "Vita",
+  "Sangli|APMC Miraj": "Miraj",
+  "Sangli|Miraj": "Miraj",
+  "Sangli|Sangli(Phale, Bhajipala Market)": "Sangli-Phale-Bhajipala"
+}

@@ -1,0 +1,11 @@
+District,Market,Commodity,Rows,Start Date,End Date,Span Days,Coverage %,Max Gap (days),Sparse
+Sangli,Islampur,Onion,65,2025-11-07,2026-09-24,322,20.2,85,True
+Sangli,Palus,Tomato,70,2025-11-14,2026-09-20,311,22.5,33,True
+Sangli,Vita,Onion,80,2025-12-08,2026-09-24,291,27.5,54,True
+Sangli,Islampur,Tomato,124,2025-11-07,2026-09-24,322,38.5,16,True
+Sangli,Vita,Tomato,156,2025-11-21,2026-09-25,309,50.5,47,False
+Kolhapur,Vadgaonpeth,Onion,180,2025-11-07,2026-09-24,322,55.9,7,False
+Kolhapur,Vadgaonpeth,Tomato,204,2025-11-07,2026-09-24,322,63.4,9,False
+Sangli,Sangli-Phale-Bhajipala,Onion,249,2025-11-07,2026-09-24,322,77.3,4,False
+Kolhapur,Kolhapur,Onion,260,2025-11-07,2026-09-24,322,80.7,3,False
+Kolhapur,Kolhapur,Tomato,261,2025-11-08,2026-09-24,321,81.3,3,False
