@@ -1,0 +1,79 @@
+{
+  "crops": {
+    "tomato": {
+      "display_name": "Tomato",
+      "perishability_class": "perishable",
+      "base_daily_weight_loss": 0.015,
+      "base_daily_spoilage_rate": 0.020,
+      "t_opt": 13.0,
+      "t_base": 22.0,
+      "q10": 2.1,
+      "rh_opt_min": 85.0,
+      "rh_opt_max": 92.0,
+      "high_temp_threshold": 30.0,
+      "high_temp_penalty_factor": 0.04,
+      "max_recommended_ambient_days": 7,
+      "critical_loss_threshold": 0.18,
+      "quality_discount_curve": [
+        {"day": 1, "discount": 0.00},
+        {"day": 2, "discount": 0.02},
+        {"day": 3, "discount": 0.05},
+        {"day": 4, "discount": 0.10},
+        {"day": 5, "discount": 0.18},
+        {"day": 6, "discount": 0.28},
+        {"day": 7, "discount": 0.40},
+        {"day": 10, "discount": 0.65},
+        {"day": 14, "discount": 0.85}
+      ]
+    },
+    "onion": {
+      "display_name": "Onion",
+      "perishability_class": "semi-perishable",
+      "base_daily_weight_loss": 0.0018,
+      "base_daily_spoilage_rate": 0.0012,
+      "t_opt": 25.0,
+      "t_base": 25.0,
+      "q10": 1.4,
+      "rh_opt_min": 60.0,
+      "rh_opt_max": 70.0,
+      "high_rh_threshold": 75.0,
+      "high_rh_penalty_factor": 0.003,
+      "rain_dampness_penalty": 0.004,
+      "max_recommended_ambient_days": 35,
+      "critical_loss_threshold": 0.12,
+      "quality_discount_curve": [
+        {"day": 3, "discount": 0.00},
+        {"day": 7, "discount": 0.01},
+        {"day": 14, "discount": 0.03},
+        {"day": 21, "discount": 0.06},
+        {"day": 30, "discount": 0.12},
+        {"day": 45, "discount": 0.22},
+        {"day": 60, "discount": 0.35}
+      ]
+    }
+  },
+  "storage_types": {
+    "ambient": {
+      "display_name": "Ambient / Open Farm Shed",
+      "mitigation_factor": 1.0,
+      "description": "Produce exposed to room temperature and ambient humidity under shade or gunny sacks."
+    },
+    "ventilated_chawl": {
+      "display_name": "Naturally Ventilated Storage (Kanda Chawl)",
+      "mitigation_factor": 0.40,
+      "applicable_crops": ["onion"],
+      "description": "Traditional raised structure with wooden/slatted floors allowing continuous air draft, keeping onions dry."
+    },
+    "zecc": {
+      "display_name": "Zero Energy Cool Chamber (ZECC)",
+      "mitigation_factor": 0.45,
+      "applicable_crops": ["tomato"],
+      "description": "Double-brick evaporative cooler lowering temperature by 5-8°C while maintaining 85-90% humidity."
+    },
+    "cold_storage": {
+      "display_name": "Commercial Cold Storage",
+      "mitigation_factor": 0.12,
+      "description": "Temperature and humidity strictly regulated by refrigeration and dehumidifiers."
+    }
+  }
+}
