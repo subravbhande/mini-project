@@ -1,0 +1,56 @@
+﻿{
+  "model": {
+    "name": "XGBoostRegressor",
+    "version": "1.0.0",
+    "hyperparameters": {
+      "n_estimators": 400,
+      "max_depth": 6,
+      "learning_rate": 0.05,
+      "subsample": 0.8,
+      "colsample_bytree": 0.8,
+      "min_child_weight": 3,
+      "reg_alpha": 0.1,
+      "reg_lambda": 1.0,
+      "random_state": 42,
+      "n_jobs": -1
+    }
+  },
+  "training": {
+    "target_column": "Modal Price",
+    "test_days": 60,
+    "forecast_horizon_days": 7,
+    "min_rows_required": 50
+  },
+  "features": {
+    "lag_days": [1, 7, 14],
+    "rolling_windows": [7, 14],
+    "categorical_columns": ["Commodity", "Market", "District"],
+    "drop_columns": [
+      "State/UT", "Commodity Group", "Variety", "Grade",
+      "Price Unit", "Arrival Unit", "source_file"
+    ]
+  },
+  "harvest_seasons": {
+    "tomato": {
+      "comment": "Main Kharif harvest Oct-Jan; Summer crop Apr-Jun",
+      "peak_months": [10, 11, 12, 1, 4, 5, 6]
+    },
+    "onion": {
+      "comment": "Rabi harvest Feb-May; Kharif Oct-Dec",
+      "peak_months": [2, 3, 4, 5, 10, 11, 12]
+    }
+  },
+  "weather": {
+    "kolhapur_raw": "data/raw/weather/kolhapur_weather_dataset.csv",
+    "sangli_raw": "data/raw/weather/sangli_weather_dataset.csv",
+    "kolhapur_processed": "data/processed/kolhapur_daily_weather.csv",
+    "sangli_processed": "data/processed/sangli_daily_weather.csv",
+    "merged_output": "data/processed/price_weather_merged.csv"
+  },
+  "paths": {
+    "price_data": "data/processed/price_history_clean.csv",
+    "model_output": "models/saved/price_model.pkl",
+    "encoders_output": "models/saved/label_encoders.pkl",
+    "feature_names_output": "models/saved/feature_names.json"
+  }
+}

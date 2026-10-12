@@ -1,0 +1,26 @@
+{
+  "overall": {
+    "mae_rs_per_quintal": 379.24,
+    "rmse_rs_per_quintal": 583.12,
+    "mape_pct": 16.09,
+    "r2": 0.6709
+  },
+  "by_commodity": {
+    "Onion": {
+      "mae_rs_per_quintal": 629.91,
+      "rmse_rs_per_quintal": 821.72,
+      "mape_pct": 19.02,
+      "r2": 0.0074
+    },
+    "Tomato": {
+      "mae_rs_per_quintal": 158.22,
+      "rmse_rs_per_quintal": 210.92,
+      "mape_pct": 13.5,
+      "r2": 0.2746
+    }
+  },
+  "test_date_range": {
+    "start": "2026-07-28",
+    "end": "2026-09-25"
+  }
+}
