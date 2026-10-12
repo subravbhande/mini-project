@@ -1,0 +1,56 @@
+[
+  {
+    "crop": "onion",
+    "crop_display": "Onion",
+    "market": "Kolhapur",
+    "district": "Kolhapur",
+    "rows": 260,
+    "first_date": "2025-11-07",
+    "last_date": "2026-09-24"
+  },
+  {
+    "crop": "onion",
+    "crop_display": "Onion",
+    "market": "Sangli-Phale-Bhajipala",
+    "district": "Sangli",
+    "rows": 249,
+    "first_date": "2025-11-07",
+    "last_date": "2026-09-24"
+  },
+  {
+    "crop": "onion",
+    "crop_display": "Onion",
+    "market": "Vadgaonpeth",
+    "district": "Kolhapur",
+    "rows": 180,
+    "first_date": "2025-11-07",
+    "last_date": "2026-09-24"
+  },
+  {
+    "crop": "tomato",
+    "crop_display": "Tomato",
+    "market": "Islampur",
+    "district": "Sangli",
+    "rows": 124,
+    "first_date": "2025-11-07",
+    "last_date": "2026-09-24"
+  },
+  {
+    "crop": "tomato",
+    "crop_display": "Tomato",
+    "market": "Kolhapur",
+    "district": "Kolhapur",
+    "rows": 261,
+    "first_date": "2025-11-08",
+    "last_date": "2026-09-24"
+  },
+  {
+    "crop": "tomato",
+    "crop_display": "Tomato",
+    "market": "Vadgaonpeth",
+    "district": "Kolhapur",
+    "rows": 204,
+    "first_date": "2025-11-07",
+    "last_date": "2026-09-24"
+  }
+]

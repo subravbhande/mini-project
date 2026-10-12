@@ -3,6 +3,13 @@ venv/
 __pycache__/
 *.pyc
 .env
+**/.env
+models/saved/*.pkl
+models/saved/*.json
+!models/saved/supported_series.json
+!models/saved/residual_quantiles.json
+!models/saved/backtest_report.json
+
 data/raw/
 data/processed/
 artifacts/*.pkl

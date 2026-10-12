@@ -1,60 +1,60 @@
 """
-AgriSense — XGBoost Price Prediction Model
-Predicts crop Modal Price (Rs./Quintal) for Onion and Tomato markets
-in Sangli & Kolhapur districts using price history, supply (arrival
-quantity), weather, and temporal/seasonal features.
-
-Used by the Phase 3 Decision Engine to estimate future market price P(t):
-    NRV(t) = Q(t) * P(t) * (1 - quality_discount(t)) - Costs
+Distress-Sale Timing Advisor — Production Price Prediction Service
+Direct multi-step forecasting with leak-free features, baseline enforcement,
+empirical uncertainty bands, and strict input validation.
 """
 
 from __future__ import annotations
 
 import json
+import logging
 import os
-import pickle
-from dataclasses import dataclass, field, asdict
+import sys
+from dataclasses import asdict, dataclass, field
 from datetime import date, datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
+from xgboost import XGBRegressor
 
-try:
-    from xgboost import XGBRegressor
-except ImportError as e:
-    raise ImportError(
-        "xgboost is required. Install with: pip install xgboost"
-    ) from e
+from models.data_access import load_prices, load_weather
+from models.features import build_features, get_feature_names
+
+logger = logging.getLogger("PriceModel")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", stream=sys.stderr)
 
 ML_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_CONFIG_PATH = os.path.join(ML_ROOT, "config", "price_model_config.json")
+DEFAULT_SAVED_DIR = os.path.join(ML_ROOT, "models", "saved")
+DEFAULT_ALIASES_PATH = os.path.join(ML_ROOT, "config", "market_aliases.json")
 
-HARVEST_SEASONS = {
-    "tomato": [10, 11, 12, 1, 4, 5, 6],
-    "onion":  [2, 3, 4, 5, 10, 11, 12],
+CROP_MAP = {"onion": 0, "tomato": 1}
+MARKET_MAP = {
+    "Islampur": 0,
+    "Kolhapur": 1,
+    "Sangli-Phale-Bhajipala": 2,
+    "Vadgaonpeth": 3,
 }
 
-WMO_RAIN_CODES = {51, 53, 55, 61, 63, 65, 71, 73, 75, 80, 81, 82, 95, 96, 99}
 
+class UnsupportedSeriesError(ValueError):
+    """Raised when an un-modeled commodity/market combination is requested."""
+    def __init__(self, message: str, valid: List[Dict[str, str]]):
+        super().__init__(message)
+        self.valid = valid
 
-# ---------------------------------------------------------------------------
-# Data structures
-# ---------------------------------------------------------------------------
 
 @dataclass
-class PricePrediction:
-    """Single-day price prediction result."""
+class DailyForecast:
+    day: int
     date: str
-    commodity: str
-    market: str
-    district: str
     predicted_modal_price: float
-    predicted_min_price: float
-    predicted_max_price: float
     confidence_band_low: float
     confidence_band_high: float
+    typical_daily_spread_min: float
+    typical_daily_spread_max: float
+    confidence_label: str
+    model_used: str
     weather_risk_flag: bool
     weather_risk_reason: str
 
@@ -63,14 +63,16 @@ class PricePrediction:
 
 
 @dataclass
-class PriceForecast:
-    """Multi-day price forecast result."""
+class PriceForecastResult:
     commodity: str
     market: str
     district: str
     forecast_start_date: str
+    data_as_of: str
+    days_stale: int
+    stale: bool
     horizon_days: int
-    daily_forecasts: List[PricePrediction] = field(default_factory=list)
+    daily_forecasts: List[DailyForecast] = field(default_factory=list)
     summary: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -79,677 +81,325 @@ class PriceForecast:
             "market": self.market,
             "district": self.district,
             "forecast_start_date": self.forecast_start_date,
+            "data_as_of": self.data_as_of,
+            "days_stale": self.days_stale,
+            "stale": self.stale,
             "horizon_days": self.horizon_days,
             "daily_forecasts": [f.to_dict() for f in self.daily_forecasts],
             "summary": self.summary,
         }
 
 
-# ---------------------------------------------------------------------------
-# Feature engineering helpers
-# ---------------------------------------------------------------------------
+# Aliases for compatibility
+PriceForecast = PriceForecastResult
+PricePrediction = DailyForecast
 
-def _add_temporal_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Add date-derived temporal features."""
-    df = df.copy()
-    df["day_of_week"]  = df["date"].dt.dayofweek          # 0=Mon
-    df["month"]        = df["date"].dt.month
-    df["week_of_year"] = df["date"].dt.isocalendar().week.astype(int)
-    df["day_of_year"]  = df["date"].dt.dayofyear
-    df["quarter"]      = df["date"].dt.quarter
-
-    # Cyclical encoding for month and day-of-week
-    df["month_sin"]    = np.sin(2 * np.pi * df["month"]       / 12)
-    df["month_cos"]    = np.cos(2 * np.pi * df["month"]       / 12)
-    df["dow_sin"]      = np.sin(2 * np.pi * df["day_of_week"] / 7)
-    df["dow_cos"]      = np.cos(2 * np.pi * df["day_of_week"] / 7)
-    return df
-
-
-def _add_harvest_season_flag(df: pd.DataFrame) -> pd.DataFrame:
-    """Add binary is_harvest_season flag per commodity."""
-    df = df.copy()
-    commodity_lower = df["Commodity"].str.lower()
-
-    def harvest_flag(row):
-        crop = row["Commodity"].lower()
-        months = HARVEST_SEASONS.get(crop, [])
-        return 1 if row["month"] in months else 0
-
-    df["is_harvest_season"] = df.apply(harvest_flag, axis=1)
-    return df
-
-
-def _add_weather_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Add weather lag and rolling features. Weather columns must already be joined."""
-    df = df.copy()
-
-    weather_cols = [
-        "temp_mean", "temp_max", "temp_min",
-        "precipitation_sum", "rain_sum", "precipitation_hours",
-        "evapotranspiration", "humidity_mean",
-        "soil_moisture_0_to_100cm", "soil_moisture_0_to_7cm",
-    ]
-
-    for col in weather_cols:
-        if col not in df.columns:
-            df[col] = 0.0
-
-    # Lag 3-day temperature (heat builds slowly)
-    df["temp_mean_lag3"] = df.groupby(["Commodity", "Market"])["temp_mean"].shift(3)
-
-    # 7-day rolling weather features
-    for col in ["precipitation_sum", "humidity_mean", "temp_mean"]:
-        df[f"{col}_roll7"] = (
-            df.groupby(["Commodity", "Market"])[col]
-            .transform(lambda x: x.shift(1).rolling(7, min_periods=1).mean())
-        )
-
-    # Binary rain event flags
-    df["heavy_rain_flag"] = (df["precipitation_sum"] > 20.0).astype(int)
-    df["is_rainy_weather"] = df["weather_code"].apply(
-        lambda c: 1 if int(c) in WMO_RAIN_CODES else 0
-        if pd.notna(c) else 0
-    ).astype(int)
-
-    return df
-
-
-def _add_price_lag_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Add lag and rolling price/arrival features per (Commodity, Market) group."""
-    df = df.copy()
-
-    for lag in [1, 7, 14]:
-        df[f"modal_price_lag{lag}"] = (
-            df.groupby(["Commodity", "Market"])["Modal Price"].shift(lag)
-        )
-        df[f"min_price_lag{lag}"] = (
-            df.groupby(["Commodity", "Market"])["Min Price"].shift(lag)
-        )
-        df[f"max_price_lag{lag}"] = (
-            df.groupby(["Commodity", "Market"])["Max Price"].shift(lag)
-        )
-
-    for window in [7, 14]:
-        df[f"modal_price_roll{window}"] = (
-            df.groupby(["Commodity", "Market"])["Modal Price"]
-            .transform(lambda x: x.shift(1).rolling(window, min_periods=1).mean())
-        )
-        df[f"modal_price_std{window}"] = (
-            df.groupby(["Commodity", "Market"])["Modal Price"]
-            .transform(lambda x: x.shift(1).rolling(window, min_periods=1).std().fillna(0))
-        )
-
-    # Price range (volatility proxy)
-    df["price_range"] = df["Max Price"] - df["Min Price"]
-
-    # Supply features
-    df["arrival_lag1"] = (
-        df.groupby(["Commodity", "Market"])["Arrival Quantity"].shift(1)
-    )
-    df["arrival_roll7"] = (
-        df.groupby(["Commodity", "Market"])["Arrival Quantity"]
-        .transform(lambda x: x.shift(1).rolling(7, min_periods=1).mean())
-    )
-
-    return df
-
-
-# ---------------------------------------------------------------------------
-# Main model class
-# ---------------------------------------------------------------------------
 
 class PriceModel:
-    """
-    XGBoost-based agricultural commodity price prediction model.
+    """Production Price Model holding pre-trained direct horizon models."""
 
-    Workflow:
-        1. load_and_prepare_data() — load + merge + feature engineering
-        2. train()                  — fit XGBoost on training split
-        3. evaluate()               — metrics on held-out test set
-        4. predict()                — forecast next N days
-        5. save() / load()          — persist model to disk
-    """
+    def __init__(self, saved_dir: str = DEFAULT_SAVED_DIR):
+        self.saved_dir = saved_dir
+        self.models: Dict[int, XGBRegressor] = {}
+        self.supported_series: List[Dict[str, Any]] = []
+        self.supported_pairs: set[Tuple[str, str]] = set()
+        self.aliases: Dict[str, str] = {}
+        self.residual_quantiles: Dict[str, Any] = {}
+        self.backtest_report: Dict[str, Any] = {}
+        self.prices_df: Optional[pd.DataFrame] = None
+        self.weather_df: Optional[pd.DataFrame] = None
+        self._load_artifacts()
 
-    def __init__(self, config_path: str = DEFAULT_CONFIG_PATH):
-        self.config_path = config_path
-        self._load_config()
+    @classmethod
+    def load(cls, saved_dir: str = DEFAULT_SAVED_DIR) -> PriceModel:
+        return cls(saved_dir=saved_dir)
 
-        params = self.cfg["model"]["hyperparameters"]
-        self.model = XGBRegressor(**params)
-        self.label_encoders: Dict[str, LabelEncoder] = {}
-        self.feature_names: List[str] = []
-        self.is_trained: bool = False
-        self._train_df: Optional[pd.DataFrame] = None  # kept for rolling predict
+    def _load_artifacts(self) -> None:
+        logger.info(f"Loading price model artifacts from: {self.saved_dir}")
 
-    # ------------------------------------------------------------------
-    # Config
-    # ------------------------------------------------------------------
-
-    def _load_config(self) -> None:
-        if not os.path.exists(self.config_path):
-            raise FileNotFoundError(f"Config not found: {self.config_path}")
-        # utf-8-sig handles BOM written by PowerShell Set-Content
-        with open(self.config_path, "r", encoding="utf-8-sig") as f:
-            self.cfg = json.load(f)
-
-    def _abs_path(self, rel: str) -> str:
-        return os.path.join(ML_ROOT, rel)
-
-    # ------------------------------------------------------------------
-    # Data loading & preparation
-    # ------------------------------------------------------------------
-
-    def load_and_prepare_data(
-        self,
-        price_csv: Optional[str] = None,
-        weather_processed_dir: Optional[str] = None,
-    ) -> pd.DataFrame:
-        """
-        Loads price data, joins weather, engineers all features.
-        Returns the fully prepared DataFrame (NaN rows from lags dropped).
-        """
-        price_path = price_csv or self._abs_path(self.cfg["paths"]["price_data"])
-        proc_dir   = weather_processed_dir or self._abs_path("data/processed")
-
-        # ---- Load price data ----
-        df = pd.read_csv(price_path, parse_dates=["Arrival Date"])
-        df.rename(columns={"Arrival Date": "date"}, inplace=True)
-        df.sort_values(["Commodity", "Market", "date"], inplace=True)
-        df.reset_index(drop=True, inplace=True)
-
-        # Drop unwanted columns
-        drop_cols = [c for c in self.cfg["features"]["drop_columns"] if c in df.columns]
-        df.drop(columns=drop_cols, inplace=True)
-
-        # ---- Coerce numeric columns (handles comma-formatted strings like "1,025.60") ----
-        numeric_cols = ["Min Price", "Max Price", "Modal Price", "Arrival Quantity"]
-        for col in numeric_cols:
-            if col in df.columns:
-                df[col] = (
-                    df[col].astype(str)
-                    .str.replace(",", "", regex=False)
-                    .pipe(pd.to_numeric, errors="coerce")
-                )
-        df.dropna(subset=["Modal Price"], inplace=True)
-        df.reset_index(drop=True, inplace=True)
-
-        # ---- Load & join weather ----
-        weather_frames = []
-        for district in ["Kolhapur", "Sangli"]:
-            wp = os.path.join(proc_dir, f"{district.lower()}_daily_weather.csv")
-            if os.path.exists(wp):
-                wdf = pd.read_csv(wp, parse_dates=["date"])
-                weather_frames.append(wdf)
-
-        if weather_frames:
-            weather_df = pd.concat(weather_frames, ignore_index=True)
-            # Normalize district names for join
-            weather_df["District"] = weather_df["district"].str.capitalize()
-            weather_df.drop(columns=["district"], inplace=True)
-            df = df.merge(weather_df, on=["date", "District"], how="left")
+        # 1. Supported series
+        sup_path = os.path.join(self.saved_dir, "supported_series.json")
+        if os.path.exists(sup_path):
+            with open(sup_path, "r", encoding="utf-8") as f:
+                self.supported_series = json.load(f)
+            self.supported_pairs = {
+                (s["crop"].lower(), s["market"]) for s in self.supported_series
+            }
         else:
-            print("[WARN] No processed weather files found. Weather features will be zero-filled.")
+            logger.warning(f"Supported series file not found at {sup_path}")
 
-        # ---- Feature engineering ----
-        df = _add_temporal_features(df)
-        df = _add_harvest_season_flag(df)
-        df = _add_weather_features(df)
-        df = _add_price_lag_features(df)
+        # 2. Market aliases
+        if os.path.exists(DEFAULT_ALIASES_PATH):
+            with open(DEFAULT_ALIASES_PATH, "r", encoding="utf-8") as f:
+                raw_aliases = json.load(f)
+            self.aliases = {k: v for k, v in raw_aliases.items() if not k.startswith("_")}
 
-        # ---- Encode categoricals ----
-        cat_cols = self.cfg["features"]["categorical_columns"]
-        for col in cat_cols:
-            if col not in df.columns:
-                continue
-            le = LabelEncoder()
-            df[col + "_enc"] = le.fit_transform(df[col].astype(str))
-            self.label_encoders[col] = le
+        # 3. Direct horizon models (1..5)
+        for h in [1, 2, 3, 4, 5]:
+            model_path = os.path.join(self.saved_dir, f"price_h{h}.json")
+            if os.path.exists(model_path):
+                xgb = XGBRegressor()
+                xgb.load_model(model_path)
+                self.models[h] = xgb
+            else:
+                logger.warning(f"Model for horizon h={h} not found at {model_path}")
 
-        return df
+        # 4. Residual quantiles
+        rq_path = os.path.join(self.saved_dir, "residual_quantiles.json")
+        if os.path.exists(rq_path):
+            with open(rq_path, "r", encoding="utf-8") as f:
+                self.residual_quantiles = json.load(f)
 
-    def _build_feature_matrix(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
-        """Extract X (features) and y (target) from prepared DataFrame."""
-        target = self.cfg["training"]["target_column"]
+        # 5. Backtest report
+        br_path = os.path.join(self.saved_dir, "backtest_report.json")
+        if os.path.exists(br_path):
+            with open(br_path, "r", encoding="utf-8") as f:
+                self.backtest_report = json.load(f)
 
-        # All numeric / encoded columns except raw categoricals and target
-        exclude = {
-            "date", target, "Min Price", "Max Price",
-            "Commodity", "Market", "District",
-        }
-        feature_cols = [
-            c for c in df.columns
-            if c not in exclude and df[c].dtype in [np.float64, np.int64, np.float32, np.int32, float, int]
+        # 6. Preload base history and weather
+        try:
+            self.prices_df = load_prices()
+            self.weather_df = load_weather()
+            logger.info("Loaded price and weather history datasets successfully.")
+        except Exception as e:
+            logger.error(f"Error preloading datasets: {e}")
+
+    def canonicalize_input(self, crop: str, market: str, district: Optional[str] = None) -> Tuple[str, str, str]:
+        c_clean = crop.strip().lower()
+        m_raw = market.strip()
+
+        # Check alias map
+        matched_market = m_raw
+        if district:
+            d_clean = district.strip().capitalize()
+            key = f"{d_clean}|{m_raw}"
+            if key in self.aliases:
+                matched_market = self.aliases[key]
+        else:
+            # Check any alias with this raw market
+            for k, val in self.aliases.items():
+                if "|" in k:
+                    _, alias_m = k.split("|", 1)
+                    if alias_m.lower() == m_raw.lower():
+                        matched_market = val
+                        break
+
+        # Validate against supported series
+        valid_list = [
+            {"crop": s["crop_display"], "market": s["market"], "district": s["district"]}
+            for s in self.supported_series
         ]
 
-        # Fill NaN weather with 0, lag NaN will be dropped
-        X = df[feature_cols].fillna(0)
-        y = df[target]
+        if (c_clean, matched_market) not in self.supported_pairs:
+            raise UnsupportedSeriesError(
+                f"Unsupported commodity and market combination: '{crop}' in '{market}'.",
+                valid=valid_list,
+            )
 
-        self.feature_names = feature_cols
-        return X, y
+        # Find matching district
+        matched_dist = ""
+        for s in self.supported_series:
+            if s["crop"].lower() == c_clean and s["market"] == matched_market:
+                matched_dist = s["district"]
+                break
 
-    # ------------------------------------------------------------------
-    # Training
-    # ------------------------------------------------------------------
-
-    def train(
-        self,
-        df: Optional[pd.DataFrame] = None,
-        price_csv: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """
-        Trains the XGBoost model. Returns training metrics.
-        If df is None, calls load_and_prepare_data() automatically.
-        """
-        if df is None:
-            df = self.load_and_prepare_data(price_csv=price_csv)
-
-        # Drop rows with NaN in lag features (first 14 days per series)
-        df_clean = df.dropna(subset=["modal_price_lag14"]).reset_index(drop=True)
-        self._train_df = df_clean
-
-        test_days = self.cfg["training"]["test_days"]
-        cutoff = df_clean["date"].max() - timedelta(days=test_days)
-
-        train_df = df_clean[df_clean["date"] <= cutoff]
-        test_df  = df_clean[df_clean["date"] >  cutoff]
-
-        X_train, y_train = self._build_feature_matrix(train_df)
-        X_test,  y_test  = self._build_feature_matrix(test_df)
-
-        print(f"\n[PriceModel] Training on {len(X_train)} rows, testing on {len(X_test)} rows")
-        print(f"             Features: {len(self.feature_names)}")
-        print(f"             Train date range: {train_df['date'].min().date()} -> {train_df['date'].max().date()}")
-        print(f"             Test  date range: {test_df['date'].min().date()}  -> {test_df['date'].max().date()}")
-
-        self.model.fit(
-            X_train, y_train,
-            eval_set=[(X_test, y_test)],
-            verbose=False,
-        )
-        self.is_trained = True
-
-        # Basic train-set metric
-        train_pred = self.model.predict(X_train)
-        train_mae  = float(np.mean(np.abs(train_pred - y_train)))
-
-        return {
-            "train_rows": len(X_train),
-            "test_rows":  len(X_test),
-            "n_features": len(self.feature_names),
-            "train_mae_rs_per_quintal": round(train_mae, 2),
-        }
-
-    # ------------------------------------------------------------------
-    # Evaluation
-    # ------------------------------------------------------------------
-
-    def evaluate(self) -> Dict[str, Any]:
-        """
-        Evaluates on the held-out test split. Must call train() first.
-        Returns MAE, RMSE, MAPE, R2 per commodity and overall.
-        """
-        if not self.is_trained or self._train_df is None:
-            raise RuntimeError("Model not trained. Call train() first.")
-
-        test_days = self.cfg["training"]["test_days"]
-        cutoff    = self._train_df["date"].max() - timedelta(days=test_days)
-        test_df   = self._train_df[self._train_df["date"] > cutoff].copy()
-
-        X_test, y_test = self._build_feature_matrix(test_df)
-        preds = self.model.predict(X_test)
-        # Store predictions separately — DO NOT add 'predicted' col to test_df
-        # as it would leak into subsequent _build_feature_matrix calls.
-        pred_series = pd.Series(preds, index=test_df.index)
-
-        def metrics(actual: np.ndarray, predicted: np.ndarray) -> Dict[str, float]:
-            mae  = float(np.mean(np.abs(actual - predicted)))
-            rmse = float(np.sqrt(np.mean((actual - predicted) ** 2)))
-            # MAPE: skip zero actuals
-            mask = actual != 0
-            mape = float(np.mean(np.abs((actual[mask] - predicted[mask]) / actual[mask])) * 100) if mask.any() else 0.0
-            ss_res = np.sum((actual - predicted) ** 2)
-            ss_tot = np.sum((actual - actual.mean()) ** 2)
-            r2 = float(1 - ss_res / ss_tot) if ss_tot > 0 else 0.0
-            return {
-                "mae_rs_per_quintal":  round(mae, 2),
-                "rmse_rs_per_quintal": round(rmse, 2),
-                "mape_pct":            round(mape, 2),
-                "r2":                  round(r2, 4),
-            }
-
-        overall = metrics(y_test.values, preds)
-
-        target = self.cfg["training"]["target_column"]
-        by_commodity = {}
-        for commodity, grp in test_df.groupby("Commodity"):
-            xg = grp[self.feature_names].fillna(0)
-            yg = grp[target].values
-            pg = self.model.predict(xg)
-            by_commodity[commodity] = metrics(yg, pg)
-
-        return {
-            "overall": overall,
-            "by_commodity": by_commodity,
-            "test_date_range": {
-                "start": str(test_df["date"].min().date()),
-                "end":   str(test_df["date"].max().date()),
-            },
-        }
-
-    # ------------------------------------------------------------------
-    # Prediction
-    # ------------------------------------------------------------------
+        return c_clean, matched_market, matched_dist
 
     def predict(
         self,
         commodity: str,
         market: str,
-        district: str,
-        start_date: Optional[str] = None,
-        horizon_days: int = 7,
+        district: Optional[str] = None,
+        horizon_days: int = 5,
+        as_of: Optional[Union[str, date, datetime]] = None,
         weather_forecast: Optional[List[Dict[str, Any]]] = None,
-    ) -> PriceForecast:
+    ) -> PriceForecastResult:
         """
-        Forecasts commodity price for `horizon_days` starting from `start_date`.
-
-        Args:
-            commodity     : 'Onion' or 'Tomato'
-            market        : e.g. 'Kolhapur', 'Sangli'
-            district      : 'Kolhapur' or 'Sangli'
-            start_date    : ISO date string (defaults to tomorrow)
-            horizon_days  : Number of days to forecast (1–14 recommended)
-            weather_forecast: Optional list of daily dicts (from weather API/OpenMeteo).
-                             Each dict may contain keys matching weather column names.
+        Generate honest multi-step price forecast.
         """
-        if not self.is_trained or self._train_df is None:
-            raise RuntimeError("Model not trained. Call train() first.")
+        if horizon_days < 1 or horizon_days > 5:
+            raise ValueError(f"horizon_days must be between 1 and 5. Requested: {horizon_days}")
 
-        if start_date is None:
-            start_dt = datetime.today().date() + timedelta(days=1)
+        crop, norm_market, norm_dist = self.canonicalize_input(commodity, market, district)
+
+        # Filter price history for this series
+        if self.prices_df is None or self.prices_df.empty:
+            self.prices_df = load_prices()
+
+        s_mask = (
+            (self.prices_df["Commodity"].str.lower() == crop)
+            & (self.prices_df["Market"] == norm_market)
+        )
+        s_df = self.prices_df[s_mask].sort_values("date").reset_index(drop=True)
+
+        if s_df.empty:
+            raise ValueError(f"No history available for {crop} in {norm_market}")
+
+        # Determine cutoff date (as_of)
+        latest_report_date = s_df["date"].max()
+        if as_of is None:
+            as_of_ts = latest_report_date
         else:
-            start_dt = datetime.strptime(start_date[:10], "%Y-%m-%d").date()
+            as_of_ts = pd.to_datetime(as_of).tz_localize(None)
 
-        # Seed from historical data for this series
-        hist = self._train_df[
-            (self._train_df["Commodity"].str.lower() == commodity.lower()) &
-            (self._train_df["Market"].str.lower()    == market.lower())
-        ].sort_values("date").tail(30).copy()
+        # Enforce past-only rows
+        hist_cutoff = s_df[s_df["date"] <= as_of_ts].copy()
+        if hist_cutoff.empty:
+            raise ValueError(f"No records found on or before as_of date: {as_of_ts.date()}")
 
-        daily_forecasts: List[PricePrediction] = []
+        last_obs_date = hist_cutoff["date"].max()
+        p_last = float(hist_cutoff.iloc[-1]["Modal Price"])
+        data_as_of_str = str(last_obs_date.date())
 
-        for i in range(horizon_days):
-            pred_date = start_dt + timedelta(days=i)
+        days_stale = max(0, int((as_of_ts - last_obs_date).days))
+        is_stale = bool(days_stale > 3)
 
-            # Build a single-row feature dict from lagged history
-            row = self._build_prediction_row(
-                hist, commodity, market, district, pred_date,
-                weather_forecast[i] if weather_forecast and i < len(weather_forecast) else {}
+        # Prepare weather lookup with forecast override
+        w_df = self.weather_df
+        if weather_forecast:
+            forecast_rows = []
+            forecast_dates = set()
+            for wf in weather_forecast:
+                d = pd.to_datetime(wf["date"]).tz_localize(None)
+                forecast_dates.add(d)
+                forecast_rows.append({
+                    "date": d,
+                    "District": norm_dist,
+                    "temp_mean": float(wf.get("temp_mean", 25.0)),
+                    "precipitation_sum": float(wf.get("precipitation_sum", 0.0)),
+                    "humidity_mean": float(wf.get("humidity_mean", 70.0)),
+                    "weather_code": int(wf.get("weather_code", 0)) if wf.get("weather_code") is not None else None,
+                })
+            base_w = self.weather_df[
+                ~((self.weather_df["District"] == norm_dist) & (self.weather_df["date"].isin(forecast_dates)))
+            ]
+            w_df = pd.concat([base_w, pd.DataFrame(forecast_rows)], ignore_index=True)
+
+
+        daily_forecasts: List[DailyForecast] = []
+        series_info = {"crop": crop, "market": norm_market, "district": norm_dist}
+
+        for h in range(1, horizon_days + 1):
+            target_date = as_of_ts + pd.Timedelta(days=h)
+            target_date_str = str(target_date.date())
+
+            # Build leak-free feature vector
+            feats = build_features(
+                history=self.prices_df,
+                series=series_info,
+                origin=as_of_ts,
+                horizon=h,
+                weather_df=w_df,
             )
-            X_row = pd.DataFrame([row])[self.feature_names].fillna(0)
-            predicted_price = float(self.model.predict(X_row)[0])
-            predicted_price = max(predicted_price, 0.0)
 
-            # Derive min/max from recent spread ratio
-            if len(hist) > 0:
-                recent = hist.tail(7)
-                avg_range = (recent["Max Price"] - recent["Min Price"]).mean()
-                avg_min_ratio = (recent["Min Price"] / recent["Modal Price"].replace(0, np.nan)).mean()
-                pred_min = round(predicted_price * float(avg_min_ratio or 0.7), 2)
-                pred_max = round(predicted_price + avg_range * 0.5, 2)
+            # Check backtest MASE
+            series_h_key = f"{crop}_{norm_market}_h{h}"
+            mase_info = self.backtest_report.get("series_horizon_metrics", {}).get(series_h_key, {})
+            mase = mase_info.get("mase", 1.0)
+            beats_naive = mase_info.get("beats_naive", False)
+
+            # Check if ML model is used or naive fallback
+            model_h = self.models.get(h)
+            if model_h is not None and beats_naive:
+                names = get_feature_names()
+                x_row = []
+                for name in names:
+                    val = feats[name]
+                    if name == "crop":
+                        x_row.append(float(CROP_MAP.get(str(val).lower(), -1)))
+                    elif name == "market":
+                        x_row.append(float(MARKET_MAP.get(str(val), -1)))
+                    else:
+                        x_row.append(float(val) if val is not None else 0.0)
+
+                x_vec = np.array([x_row], dtype=np.float32)
+                y_hat = float(model_h.predict(x_vec)[0])
+                y_hat_clipped = float(np.clip(y_hat, -0.5, 0.5))
+                p_hat = round(p_last * float(np.exp(y_hat_clipped)), 2)
+                model_used = f"xgboost_direct_h{h}"
             else:
-                pred_min = round(predicted_price * 0.85, 2)
-                pred_max = round(predicted_price * 1.15, 2)
+                p_hat = round(p_last, 2)
+                model_used = "naive_persistence"
 
-            # Confidence band: ±10% (simple; expand with SHAP uncertainty later)
-            band_low  = round(predicted_price * 0.90, 2)
-            band_high = round(predicted_price * 1.10, 2)
+            # Uncertainty bands from empirical residual quantiles
+            rq_key = f"{crop}_h{h}"
+            rq = self.residual_quantiles.get(rq_key, {"q10": -0.15, "q90": 0.15})
+            q10 = float(rq.get("q10", -0.15))
+            q90 = float(rq.get("q90", 0.15))
 
-            # Weather risk flag
-            wf = weather_forecast[i] if weather_forecast and i < len(weather_forecast) else {}
-            rain = float(wf.get("precipitation_sum", row.get("precipitation_sum", 0) or 0))
-            wcode = int(wf.get("weather_code", row.get("weather_code", 0) or 0))
-            heavy_rain = rain > 20.0 or wcode in WMO_RAIN_CODES
-            risk_reason = f"Heavy rainfall ({rain:.1f}mm) may disrupt supply" if heavy_rain else ""
+            # Stale penalty: widen bands if data is stale
+            widen_factor = 1.0 + (0.08 * min(days_stale - 3, 5)) if is_stale else 1.0
+            eff_q10 = q10 * widen_factor
+            eff_q90 = q90 * widen_factor
 
-            forecast_entry = PricePrediction(
-                date=str(pred_date),
-                commodity=commodity,
-                market=market,
-                district=district,
-                predicted_modal_price=round(predicted_price, 2),
-                predicted_min_price=pred_min,
-                predicted_max_price=pred_max,
-                confidence_band_low=band_low,
-                confidence_band_high=band_high,
-                weather_risk_flag=heavy_rain,
-                weather_risk_reason=risk_reason,
+            low_band = round(p_hat * float(np.exp(eff_q10)), 2)
+            high_band = round(p_hat * float(np.exp(eff_q90)), 2)
+
+            # Typical spread (+-5% of point forecast)
+            typical_min = round(p_hat * 0.95, 2)
+            typical_max = round(p_hat * 1.05, 2)
+
+            # Calibrated confidence label based on relative band width
+            rel_width = (high_band - low_band) / p_hat if p_hat > 0 else 0.20
+            if rel_width < 0.12:
+                confidence_label = "High"
+            elif rel_width <= 0.22:
+                confidence_label = "Moderate"
+            else:
+                confidence_label = "Low"
+
+            # Rain risk flag (P1-3)
+            precip = feats.get("precipitation_sum", 0.0)
+            if precip >= 50.0:
+                rain_flag = True
+                rain_reason = f"Heavy rain ({round(precip, 1)} mm)"
+            elif precip >= 15.0:
+                rain_flag = True
+                rain_reason = f"Rain expected ({round(precip, 1)} mm)"
+            else:
+                rain_flag = False
+                rain_reason = "No adverse weather risk"
+
+            daily_forecasts.append(
+                DailyForecast(
+                    day=h,
+                    date=target_date_str,
+                    predicted_modal_price=p_hat,
+                    confidence_band_low=low_band,
+                    confidence_band_high=high_band,
+                    typical_daily_spread_min=typical_min,
+                    typical_daily_spread_max=typical_max,
+                    confidence_label=confidence_label,
+                    model_used=model_used,
+                    weather_risk_flag=rain_flag,
+                    weather_risk_reason=rain_reason,
+                )
             )
-            daily_forecasts.append(forecast_entry)
 
-            # Feed prediction back as lag for next day
-            new_row = {
-                "date": pd.Timestamp(pred_date),
-                "Commodity": commodity,
-                "Market": market,
-                "District": district,
-                "Modal Price": predicted_price,
-                "Min Price": pred_min,
-                "Max Price": pred_max,
-                "Arrival Quantity": hist["Arrival Quantity"].mean() if len(hist) > 0 else 0,
-                **{k: float(wf.get(k, 0) or 0) for k in [
-                    "temp_mean", "temp_max", "temp_min", "precipitation_sum",
-                    "rain_sum", "precipitation_hours", "evapotranspiration",
-                    "weather_code", "humidity_mean",
-                    "soil_moisture_0_to_100cm", "soil_moisture_0_to_7cm",
-                    "soil_moisture_7_to_28cm", "soil_moisture_28_to_100cm",
-                ]},
-            }
-            hist = pd.concat([hist, pd.DataFrame([new_row])], ignore_index=True)
+        # Summary KPIs
+        prices_horizon = [f.predicted_modal_price for f in daily_forecasts]
+        net_trend = "RISING" if prices_horizon[-1] > prices_horizon[0] else ("FALLING" if prices_horizon[-1] < prices_horizon[0] else "STABLE")
+        pct_change = round(((prices_horizon[-1] - p_last) / p_last) * 100.0, 2)
 
-        prices = [f.predicted_modal_price for f in daily_forecasts]
         summary = {
-            "forecast_min_price":  round(min(prices), 2),
-            "forecast_max_price":  round(max(prices), 2),
-            "forecast_avg_price":  round(sum(prices) / len(prices), 2),
-            "price_trend":         "UP" if prices[-1] > prices[0] else "DOWN" if prices[-1] < prices[0] else "STABLE",
-            "weather_risk_days":   sum(1 for f in daily_forecasts if f.weather_risk_flag),
+            "last_observed_price": p_last,
+            "min_forecast_price": min(prices_horizon),
+            "max_forecast_price": max(prices_horizon),
+            "projected_change_pct": pct_change,
+            "overall_trend": net_trend,
+            "overall_confidence": daily_forecasts[0].confidence_label,
+            "is_stale_warning": is_stale,
         }
 
-        return PriceForecast(
-            commodity=commodity,
-            market=market,
-            district=district,
-            forecast_start_date=str(start_dt),
+        return PriceForecastResult(
+            commodity=crop.capitalize(),
+            market=norm_market,
+            district=norm_dist,
+            forecast_start_date=str((as_of_ts + timedelta(days=1)).date()),
+            data_as_of=data_as_of_str,
+            days_stale=days_stale,
+            stale=is_stale,
             horizon_days=horizon_days,
             daily_forecasts=daily_forecasts,
             summary=summary,
         )
-
-    def _build_prediction_row(
-        self,
-        hist: pd.DataFrame,
-        commodity: str,
-        market: str,
-        district: str,
-        pred_date: date,
-        weather: Dict[str, Any],
-    ) -> Dict[str, Any]:
-        """Assembles a feature row dict for a single prediction step."""
-        ts = pd.Timestamp(pred_date)
-        month     = ts.month
-        dow       = ts.dayofweek
-        woy       = ts.isocalendar()[1]
-
-        crop_lower = commodity.lower()
-        harvest_months = HARVEST_SEASONS.get(crop_lower, [])
-
-        def lag_price(n: int) -> float:
-            if len(hist) >= n:
-                return float(hist["Modal Price"].iloc[-n])
-            return float(hist["Modal Price"].mean()) if len(hist) > 0 else 0.0
-
-        def roll_mean(col: str, w: int) -> float:
-            if col not in hist.columns or len(hist) == 0:
-                return 0.0
-            return float(hist[col].tail(w).mean())
-
-        def roll_std(col: str, w: int) -> float:
-            if col not in hist.columns or len(hist) == 0:
-                return 0.0
-            return float(hist[col].tail(w).std(ddof=0))
-
-        # Encode categoricals
-        def encode(col: str, val: str) -> int:
-            le = self.label_encoders.get(col)
-            if le is None:
-                return 0
-            try:
-                return int(le.transform([val])[0])
-            except ValueError:
-                return 0
-
-        wcode = int(weather.get("weather_code", 0) or 0)
-
-        row = {
-            # Temporal
-            "day_of_week":  dow,
-            "month":        month,
-            "week_of_year": woy,
-            "day_of_year":  ts.dayofyear,
-            "quarter":      ts.quarter,
-            "month_sin":    np.sin(2 * np.pi * month / 12),
-            "month_cos":    np.cos(2 * np.pi * month / 12),
-            "dow_sin":      np.sin(2 * np.pi * dow   / 7),
-            "dow_cos":      np.cos(2 * np.pi * dow   / 7),
-
-            # Seasonal
-            "is_harvest_season": 1 if month in harvest_months else 0,
-
-            # Price lags
-            "modal_price_lag1":  lag_price(1),
-            "modal_price_lag7":  lag_price(7),
-            "modal_price_lag14": lag_price(14),
-            "min_price_lag1":    float(hist["Min Price"].iloc[-1]) if len(hist) > 0 else 0.0,
-            "max_price_lag1":    float(hist["Max Price"].iloc[-1]) if len(hist) > 0 else 0.0,
-            "min_price_lag7":    float(hist["Min Price"].iloc[-7]) if len(hist) >= 7 else 0.0,
-            "max_price_lag7":    float(hist["Max Price"].iloc[-7]) if len(hist) >= 7 else 0.0,
-            "min_price_lag14":   float(hist["Min Price"].iloc[-14]) if len(hist) >= 14 else 0.0,
-            "max_price_lag14":   float(hist["Max Price"].iloc[-14]) if len(hist) >= 14 else 0.0,
-
-            # Price rolling
-            "modal_price_roll7":  roll_mean("Modal Price", 7),
-            "modal_price_roll14": roll_mean("Modal Price", 14),
-            "modal_price_std7":   roll_std("Modal Price", 7),
-            "modal_price_std14":  roll_std("Modal Price", 14),
-
-            # Price spread
-            "price_range": lag_price(1) - float(hist["Min Price"].iloc[-1]) if len(hist) > 0 else 0.0,
-
-            # Supply
-            "Arrival Quantity": float(weather.get("arrival_quantity", roll_mean("Arrival Quantity", 7))),
-            "arrival_lag1":     roll_mean("Arrival Quantity", 1),
-            "arrival_roll7":    roll_mean("Arrival Quantity", 7),
-
-            # Weather (current day from forecast)
-            "temp_mean":               float(weather.get("temp_mean",           25.0) or 25.0),
-            "temp_max":                float(weather.get("temp_max",            30.0) or 30.0),
-            "temp_min":                float(weather.get("temp_min",            20.0) or 20.0),
-            "precipitation_sum":       float(weather.get("precipitation_sum",   0.0)  or 0.0),
-            "rain_sum":                float(weather.get("rain_sum",            0.0)  or 0.0),
-            "precipitation_hours":     float(weather.get("precipitation_hours", 0.0)  or 0.0),
-            "evapotranspiration":      float(weather.get("evapotranspiration",  4.0)  or 4.0),
-            "humidity_mean":           float(weather.get("humidity_mean",       70.0) or 70.0),
-            "soil_moisture_0_to_100cm":  float(weather.get("soil_moisture_0_to_100cm",  0.3) or 0.3),
-            "soil_moisture_0_to_7cm":    float(weather.get("soil_moisture_0_to_7cm",    0.2) or 0.2),
-            "soil_moisture_7_to_28cm":   float(weather.get("soil_moisture_7_to_28cm",   0.25) or 0.25),
-            "soil_moisture_28_to_100cm": float(weather.get("soil_moisture_28_to_100cm", 0.3) or 0.3),
-            "weather_code":            float(wcode),
-
-            # Weather lags / rolling
-            "temp_mean_lag3":           roll_mean("temp_mean", 3),
-            "precipitation_sum_roll7":  roll_mean("precipitation_sum", 7),
-            "humidity_mean_roll7":      roll_mean("humidity_mean", 7),
-            "temp_mean_roll7":          roll_mean("temp_mean", 7),
-
-            # Weather binary flags
-            "heavy_rain_flag": 1 if float(weather.get("precipitation_sum", 0) or 0) > 20.0 else 0,
-            "is_rainy_weather": 1 if wcode in WMO_RAIN_CODES else 0,
-
-            # Categoricals (encoded)
-            "Commodity_enc": encode("Commodity", commodity),
-            "Market_enc":    encode("Market",    market),
-            "District_enc":  encode("District",  district),
-        }
-        return row
-
-    # ------------------------------------------------------------------
-    # Feature importance
-    # ------------------------------------------------------------------
-
-    def get_feature_importance(self, top_n: int = 20) -> List[Dict[str, Any]]:
-        """Returns top-N features by XGBoost importance score."""
-        if not self.is_trained:
-            raise RuntimeError("Model not trained.")
-        scores = self.model.feature_importances_
-        pairs = sorted(
-            zip(self.feature_names, scores),
-            key=lambda x: x[1], reverse=True
-        )
-        return [{"feature": f, "importance": round(float(s), 6)} for f, s in pairs[:top_n]]
-
-    # ------------------------------------------------------------------
-    # Persistence
-    # ------------------------------------------------------------------
-
-    def save(self, model_path: Optional[str] = None) -> None:
-        """Saves model, encoders, and feature names to disk."""
-        model_path = model_path or self._abs_path(self.cfg["paths"]["model_output"])
-        enc_path   = self._abs_path(self.cfg["paths"]["encoders_output"])
-        feat_path  = self._abs_path(self.cfg["paths"]["feature_names_output"])
-
-        os.makedirs(os.path.dirname(model_path), exist_ok=True)
-
-        with open(model_path, "wb") as f:
-            pickle.dump(self.model, f)
-        with open(enc_path, "wb") as f:
-            pickle.dump(self.label_encoders, f)
-        with open(feat_path, "w", encoding="utf-8") as f:
-            json.dump(self.feature_names, f, indent=2)
-
-        print(f"[PriceModel] Saved model      -> {model_path}")
-        print(f"[PriceModel] Saved encoders   -> {enc_path}")
-        print(f"[PriceModel] Saved features   -> {feat_path}")
-
-    @classmethod
-    def load(cls, config_path: str = DEFAULT_CONFIG_PATH) -> "PriceModel":
-        """Loads a persisted model from disk and rebuilds training data cache for predict()."""
-        instance = cls(config_path=config_path)
-        model_path = instance._abs_path(instance.cfg["paths"]["model_output"])
-        enc_path   = instance._abs_path(instance.cfg["paths"]["encoders_output"])
-        feat_path  = instance._abs_path(instance.cfg["paths"]["feature_names_output"])
-
-        with open(model_path, "rb") as f:
-            instance.model = pickle.load(f)
-        with open(enc_path, "rb") as f:
-            instance.label_encoders = pickle.load(f)
-        with open(feat_path, "r", encoding="utf-8") as f:
-            instance.feature_names = json.load(f)
-
-        instance.is_trained = True
-        print(f"[PriceModel] Loaded from {model_path}")
-
-        # Rebuild _train_df so predict() and evaluate() have historical lag context
-        print(f"[PriceModel] Rebuilding training data cache...")
-        try:
-            df = instance.load_and_prepare_data()
-            test_days = instance.cfg["training"]["test_days"]
-            df_clean = df.dropna(subset=["modal_price_lag14"]).reset_index(drop=True)
-            instance._train_df = df_clean
-            print(f"[PriceModel] Cache ready: {len(df_clean)} rows")
-        except Exception as e:
-            print(f"[PriceModel] [WARN] Could not rebuild data cache: {e}")
-            print(f"[PriceModel] predict() will work with limited history.")
-
-        return instance

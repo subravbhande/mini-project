@@ -1,34 +1,29 @@
-﻿{
+{
   "model": {
     "name": "XGBoostRegressor",
-    "version": "1.0.0",
+    "version": "2.0.0",
+    "target_type": "log_relative_return",
+    "clip_range": [-0.5, 0.5],
     "hyperparameters": {
-      "n_estimators": 400,
-      "max_depth": 6,
+      "n_estimators": 150,
+      "max_depth": 3,
       "learning_rate": 0.05,
       "subsample": 0.8,
       "colsample_bytree": 0.8,
-      "min_child_weight": 3,
-      "reg_alpha": 0.1,
-      "reg_lambda": 1.0,
+      "min_child_weight": 5,
       "random_state": 42,
       "n_jobs": -1
     }
   },
   "training": {
     "target_column": "Modal Price",
-    "test_days": 60,
-    "forecast_horizon_days": 7,
-    "min_rows_required": 50
+    "forecast_horizons": [1, 2, 3, 4, 5],
+    "min_history_days": 120
   },
-  "features": {
-    "lag_days": [1, 7, 14],
-    "rolling_windows": [7, 14],
-    "categorical_columns": ["Commodity", "Market", "District"],
-    "drop_columns": [
-      "State/UT", "Commodity Group", "Variety", "Grade",
-      "Price Unit", "Arrival Unit", "source_file"
-    ]
+  "rain_risk": {
+    "rain_risk_mm": 15.0,
+    "heavy_rain_mm": 50.0,
+    "heavy_wmo_codes": [65, 82, 95, 96, 99]
   },
   "harvest_seasons": {
     "tomato": {
@@ -41,16 +36,13 @@
     }
   },
   "weather": {
-    "kolhapur_raw": "data/raw/weather/kolhapur_weather_dataset.csv",
-    "sangli_raw": "data/raw/weather/sangli_weather_dataset.csv",
-    "kolhapur_processed": "data/processed/kolhapur_daily_weather.csv",
-    "sangli_processed": "data/processed/sangli_daily_weather.csv",
-    "merged_output": "data/processed/price_weather_merged.csv"
+    "weather_clean_csv": "data/processed/weather_history_clean.csv"
   },
   "paths": {
-    "price_data": "data/processed/price_history_clean.csv",
-    "model_output": "models/saved/price_model.pkl",
-    "encoders_output": "models/saved/label_encoders.pkl",
-    "feature_names_output": "models/saved/feature_names.json"
+    "price_data": "data/processed/price_history_filtered.csv",
+    "models_dir": "models/saved",
+    "supported_series": "models/saved/supported_series.json",
+    "residual_quantiles": "models/saved/residual_quantiles.json",
+    "backtest_report": "models/saved/backtest_report.json"
   }
 }

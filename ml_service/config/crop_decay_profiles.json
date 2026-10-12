@@ -1,4 +1,11 @@
 {
+  "simulation_defaults": {
+    "cutoff_value_multiplier": 0.60,
+    "max_simulation_days": {
+      "tomato": 14,
+      "onion": 60
+    }
+  },
   "crops": {
     "tomato": {
       "display_name": "Tomato",
@@ -14,6 +21,7 @@
       "high_temp_penalty_factor": 0.04,
       "max_recommended_ambient_days": 7,
       "critical_loss_threshold": 0.18,
+      "calibration_source": "ICAR-CISH Post-Harvest Technology Handbook (2022); FAO Bulletin 151 (Handling and Storage of Vegetables)",
       "quality_discount_curve": [
         {"day": 1, "discount": 0.00},
         {"day": 2, "discount": 0.02},
@@ -41,6 +49,7 @@
       "rain_dampness_penalty": 0.004,
       "max_recommended_ambient_days": 35,
       "critical_loss_threshold": 0.12,
+      "calibration_source": "ICAR-DOGR Onion Storage Technical Bulletin (2021); Kader (2002) Postharvest Technology of Horticultural Crops",
       "quality_discount_curve": [
         {"day": 3, "discount": 0.00},
         {"day": 7, "discount": 0.01},
@@ -56,24 +65,34 @@
     "ambient": {
       "display_name": "Ambient / Open Farm Shed",
       "mitigation_factor": 1.0,
+      "cost_per_quintal_per_day": 0.0,
       "description": "Produce exposed to room temperature and ambient humidity under shade or gunny sacks."
     },
     "ventilated_chawl": {
       "display_name": "Naturally Ventilated Storage (Kanda Chawl)",
       "mitigation_factor": 0.40,
+      "cost_per_quintal_per_day": 1.0,
       "applicable_crops": ["onion"],
       "description": "Traditional raised structure with wooden/slatted floors allowing continuous air draft, keeping onions dry."
     },
     "zecc": {
       "display_name": "Zero Energy Cool Chamber (ZECC)",
-      "mitigation_factor": 0.45,
+      "mitigation_factor": 1.0,
+      "cost_per_quintal_per_day": 3.0,
       "applicable_crops": ["tomato"],
+      "environment_override": true,
+      "temp_reduction_c": 6.0,
+      "rh_boost_pct": 15.0,
       "description": "Double-brick evaporative cooler lowering temperature by 5-8°C while maintaining 85-90% humidity."
     },
     "cold_storage": {
       "display_name": "Commercial Cold Storage",
-      "mitigation_factor": 0.12,
-      "description": "Temperature and humidity strictly regulated by refrigeration and dehumidifiers."
+      "mitigation_factor": 1.0,
+      "cost_per_quintal_per_day": 8.0,
+      "environment_override": true,
+      "temp_c": {"tomato": 12.0, "onion": 2.0},
+      "rh_pct": {"tomato": 88.0, "onion": 65.0},
+      "description": "Temperature and humidity strictly regulated by commercial refrigeration and dehumidifiers."
     }
   }
 }

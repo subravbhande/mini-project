@@ -1,0 +1,82 @@
+{
+  "tomato_h1": {
+    "crop": "tomato",
+    "horizon": 1,
+    "q10": -0.2382,
+    "q90": 0.2846,
+    "coverage_pct": 76.2,
+    "n_samples": 42
+  },
+  "onion_h2": {
+    "crop": "onion",
+    "horizon": 2,
+    "q10": -0.0628,
+    "q90": 0.1171,
+    "coverage_pct": 78.3,
+    "n_samples": 46
+  },
+  "tomato_h2": {
+    "crop": "tomato",
+    "horizon": 2,
+    "q10": -0.1936,
+    "q90": 0.1693,
+    "coverage_pct": 76.9,
+    "n_samples": 26
+  },
+  "onion_h3": {
+    "crop": "onion",
+    "horizon": 3,
+    "q10": -0.1055,
+    "q90": 0.0936,
+    "coverage_pct": 80.3,
+    "n_samples": 61
+  },
+  "tomato_h3": {
+    "crop": "tomato",
+    "horizon": 3,
+    "q10": -0.2136,
+    "q90": 0.1834,
+    "coverage_pct": 80.5,
+    "n_samples": 41
+  },
+  "onion_h4": {
+    "crop": "onion",
+    "horizon": 4,
+    "q10": -0.0834,
+    "q90": 0.1624,
+    "coverage_pct": 79.1,
+    "n_samples": 67
+  },
+  "tomato_h4": {
+    "crop": "tomato",
+    "horizon": 4,
+    "q10": -0.2056,
+    "q90": 0.2025,
+    "coverage_pct": 78.3,
+    "n_samples": 46
+  },
+  "onion_h5": {
+    "crop": "onion",
+    "horizon": 5,
+    "q10": -0.126,
+    "q90": 0.1846,
+    "coverage_pct": 80.3,
+    "n_samples": 61
+  },
+  "tomato_h5": {
+    "crop": "tomato",
+    "horizon": 5,
+    "q10": -0.2148,
+    "q90": 0.2589,
+    "coverage_pct": 80.0,
+    "n_samples": 40
+  },
+  "onion_h1": {
+    "crop": "onion",
+    "horizon": 1,
+    "q10": -0.0665,
+    "q90": 0.0968,
+    "coverage_pct": 66.7,
+    "n_samples": 12
+  }
+}

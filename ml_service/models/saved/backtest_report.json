@@ -1,0 +1,382 @@
+{
+  "evaluation_type": "rolling_origin_expanding_window",
+  "n_origins": 29,
+  "total_test_points": 442,
+  "crop_summary": {
+    "onion": {
+      "crop": "onion",
+      "n_points": 247,
+      "mae_model": 130.5,
+      "mae_naive": 117.77,
+      "mape_pct": 7.53,
+      "mase": 1.1082,
+      "beats_naive": false
+    },
+    "tomato": {
+      "crop": "tomato",
+      "n_points": 195,
+      "mae_model": 217.53,
+      "mae_naive": 230.26,
+      "mape_pct": 13.94,
+      "mase": 0.9447,
+      "beats_naive": true
+    }
+  },
+  "series_horizon_metrics": {
+    "onion_Kolhapur_h2": {
+      "crop": "onion",
+      "market": "Kolhapur",
+      "horizon": 2,
+      "n_eval_points": 23,
+      "mae_model": 98.06,
+      "mae_naive": 65.22,
+      "mae_mean7": 107.76,
+      "mape_model_pct": 6.15,
+      "mape_naive_pct": 3.74,
+      "mase": 1.5036,
+      "beats_naive": false
+    },
+    "onion_Kolhapur_h3": {
+      "crop": "onion",
+      "market": "Kolhapur",
+      "horizon": 3,
+      "n_eval_points": 26,
+      "mae_model": 94.17,
+      "mae_naive": 84.62,
+      "mae_mean7": 100.46,
+      "mape_model_pct": 6.39,
+      "mape_naive_pct": 5.76,
+      "mase": 1.1129,
+      "beats_naive": false
+    },
+    "onion_Kolhapur_h4": {
+      "crop": "onion",
+      "market": "Kolhapur",
+      "horizon": 4,
+      "n_eval_points": 26,
+      "mae_model": 124.62,
+      "mae_naive": 88.46,
+      "mae_mean7": 114.01,
+      "mape_model_pct": 7.82,
+      "mape_naive_pct": 5.75,
+      "mase": 1.4087,
+      "beats_naive": false
+    },
+    "onion_Kolhapur_h5": {
+      "crop": "onion",
+      "market": "Kolhapur",
+      "horizon": 5,
+      "n_eval_points": 24,
+      "mae_model": 120.31,
+      "mae_naive": 129.17,
+      "mae_mean7": 129.07,
+      "mape_model_pct": 7.89,
+      "mape_naive_pct": 8.95,
+      "mase": 0.9315,
+      "beats_naive": true
+    },
+    "onion_Sangli-Phale-Bhajipala_h2": {
+      "crop": "onion",
+      "market": "Sangli-Phale-Bhajipala",
+      "horizon": 2,
+      "n_eval_points": 23,
+      "mae_model": 100.99,
+      "mae_naive": 93.48,
+      "mae_mean7": 116.19,
+      "mape_model_pct": 5.86,
+      "mape_naive_pct": 5.92,
+      "mase": 1.0803,
+      "beats_naive": false
+    },
+    "onion_Sangli-Phale-Bhajipala_h3": {
+      "crop": "onion",
+      "market": "Sangli-Phale-Bhajipala",
+      "horizon": 3,
+      "n_eval_points": 23,
+      "mae_model": 120.99,
+      "mae_naive": 115.78,
+      "mae_mean7": 126.63,
+      "mape_model_pct": 6.78,
+      "mape_naive_pct": 6.78,
+      "mase": 1.045,
+      "beats_naive": false
+    },
+    "onion_Sangli-Phale-Bhajipala_h4": {
+      "crop": "onion",
+      "market": "Sangli-Phale-Bhajipala",
+      "horizon": 4,
+      "n_eval_points": 25,
+      "mae_model": 151.26,
+      "mae_naive": 147.0,
+      "mae_mean7": 177.76,
+      "mape_model_pct": 8.06,
+      "mape_naive_pct": 8.03,
+      "mase": 1.0289,
+      "beats_naive": false
+    },
+    "onion_Sangli-Phale-Bhajipala_h5": {
+      "crop": "onion",
+      "market": "Sangli-Phale-Bhajipala",
+      "horizon": 5,
+      "n_eval_points": 22,
+      "mae_model": 187.31,
+      "mae_naive": 168.18,
+      "mae_mean7": 193.07,
+      "mape_model_pct": 9.35,
+      "mape_naive_pct": 9.26,
+      "mase": 1.1137,
+      "beats_naive": false
+    },
+    "onion_Vadgaonpeth_h1": {
+      "crop": "onion",
+      "market": "Vadgaonpeth",
+      "horizon": 1,
+      "n_eval_points": 12,
+      "mae_model": 130.41,
+      "mae_naive": 83.33,
+      "mae_mean7": 121.37,
+      "mape_model_pct": 6.47,
+      "mape_naive_pct": 4.16,
+      "mase": 1.5649,
+      "beats_naive": false
+    },
+    "onion_Vadgaonpeth_h3": {
+      "crop": "onion",
+      "market": "Vadgaonpeth",
+      "horizon": 3,
+      "n_eval_points": 12,
+      "mae_model": 111.74,
+      "mae_naive": 150.0,
+      "mae_mean7": 80.71,
+      "mape_model_pct": 7.74,
+      "mape_naive_pct": 10.38,
+      "mase": 0.7449,
+      "beats_naive": true
+    },
+    "onion_Vadgaonpeth_h4": {
+      "crop": "onion",
+      "market": "Vadgaonpeth",
+      "horizon": 4,
+      "n_eval_points": 16,
+      "mae_model": 166.11,
+      "mae_naive": 162.5,
+      "mae_mean7": 131.13,
+      "mape_model_pct": 9.23,
+      "mape_naive_pct": 9.86,
+      "mase": 1.0222,
+      "beats_naive": false
+    },
+    "onion_Vadgaonpeth_h5": {
+      "crop": "onion",
+      "market": "Vadgaonpeth",
+      "horizon": 5,
+      "n_eval_points": 15,
+      "mae_model": 188.75,
+      "mae_naive": 160.0,
+      "mae_mean7": 189.98,
+      "mape_model_pct": 9.51,
+      "mape_naive_pct": 8.42,
+      "mase": 1.1797,
+      "beats_naive": false
+    },
+    "tomato_Kolhapur_h1": {
+      "crop": "tomato",
+      "market": "Kolhapur",
+      "horizon": 1,
+      "n_eval_points": 27,
+      "mae_model": 196.13,
+      "mae_naive": 211.11,
+      "mae_mean7": 189.56,
+      "mape_model_pct": 13.53,
+      "mape_naive_pct": 14.68,
+      "mase": 0.929,
+      "beats_naive": true
+    },
+    "tomato_Kolhapur_h2": {
+      "crop": "tomato",
+      "market": "Kolhapur",
+      "horizon": 2,
+      "n_eval_points": 26,
+      "mae_model": 190.71,
+      "mae_naive": 176.92,
+      "mae_mean7": 191.06,
+      "mape_model_pct": 11.26,
+      "mape_naive_pct": 10.54,
+      "mase": 1.0779,
+      "beats_naive": false
+    },
+    "tomato_Kolhapur_h3": {
+      "crop": "tomato",
+      "market": "Kolhapur",
+      "horizon": 3,
+      "n_eval_points": 27,
+      "mae_model": 155.93,
+      "mae_naive": 125.93,
+      "mae_mean7": 171.46,
+      "mape_model_pct": 10.45,
+      "mape_naive_pct": 8.64,
+      "mase": 1.2383,
+      "beats_naive": false
+    },
+    "tomato_Kolhapur_h4": {
+      "crop": "tomato",
+      "market": "Kolhapur",
+      "horizon": 4,
+      "n_eval_points": 27,
+      "mae_model": 196.32,
+      "mae_naive": 181.48,
+      "mae_mean7": 243.77,
+      "mape_model_pct": 13.17,
+      "mape_naive_pct": 11.08,
+      "mase": 1.0817,
+      "beats_naive": false
+    },
+    "tomato_Kolhapur_h5": {
+      "crop": "tomato",
+      "market": "Kolhapur",
+      "horizon": 5,
+      "n_eval_points": 25,
+      "mae_model": 180.4,
+      "mae_naive": 168.0,
+      "mae_mean7": 217.3,
+      "mape_model_pct": 11.53,
+      "mape_naive_pct": 10.98,
+      "mase": 1.0738,
+      "beats_naive": false
+    },
+    "tomato_Vadgaonpeth_h1": {
+      "crop": "tomato",
+      "market": "Vadgaonpeth",
+      "horizon": 1,
+      "n_eval_points": 15,
+      "mae_model": 284.22,
+      "mae_naive": 310.0,
+      "mae_mean7": 234.89,
+      "mape_model_pct": 18.49,
+      "mape_naive_pct": 21.29,
+      "mase": 0.9168,
+      "beats_naive": true
+    },
+    "tomato_Vadgaonpeth_h3": {
+      "crop": "tomato",
+      "market": "Vadgaonpeth",
+      "horizon": 3,
+      "n_eval_points": 14,
+      "mae_model": 262.68,
+      "mae_naive": 325.0,
+      "mae_mean7": 262.94,
+      "mape_model_pct": 16.91,
+      "mape_naive_pct": 21.1,
+      "mase": 0.8082,
+      "beats_naive": true
+    },
+    "tomato_Vadgaonpeth_h4": {
+      "crop": "tomato",
+      "market": "Vadgaonpeth",
+      "horizon": 4,
+      "n_eval_points": 19,
+      "mae_model": 275.69,
+      "mae_naive": 350.0,
+      "mae_mean7": 283.22,
+      "mape_model_pct": 16.73,
+      "mape_naive_pct": 23.34,
+      "mase": 0.7877,
+      "beats_naive": true
+    },
+    "tomato_Vadgaonpeth_h5": {
+      "crop": "tomato",
+      "market": "Vadgaonpeth",
+      "horizon": 5,
+      "n_eval_points": 15,
+      "mae_model": 330.97,
+      "mae_naive": 416.67,
+      "mae_mean7": 404.63,
+      "mape_model_pct": 20.18,
+      "mape_naive_pct": 25.28,
+      "mase": 0.7943,
+      "beats_naive": true
+    }
+  },
+  "residual_quantiles": {
+    "tomato_h1": {
+      "crop": "tomato",
+      "horizon": 1,
+      "q10": -0.2382,
+      "q90": 0.2846,
+      "coverage_pct": 76.2,
+      "n_samples": 42
+    },
+    "onion_h2": {
+      "crop": "onion",
+      "horizon": 2,
+      "q10": -0.0628,
+      "q90": 0.1171,
+      "coverage_pct": 78.3,
+      "n_samples": 46
+    },
+    "tomato_h2": {
+      "crop": "tomato",
+      "horizon": 2,
+      "q10": -0.1936,
+      "q90": 0.1693,
+      "coverage_pct": 76.9,
+      "n_samples": 26
+    },
+    "onion_h3": {
+      "crop": "onion",
+      "horizon": 3,
+      "q10": -0.1055,
+      "q90": 0.0936,
+      "coverage_pct": 80.3,
+      "n_samples": 61
+    },
+    "tomato_h3": {
+      "crop": "tomato",
+      "horizon": 3,
+      "q10": -0.2136,
+      "q90": 0.1834,
+      "coverage_pct": 80.5,
+      "n_samples": 41
+    },
+    "onion_h4": {
+      "crop": "onion",
+      "horizon": 4,
+      "q10": -0.0834,
+      "q90": 0.1624,
+      "coverage_pct": 79.1,
+      "n_samples": 67
+    },
+    "tomato_h4": {
+      "crop": "tomato",
+      "horizon": 4,
+      "q10": -0.2056,
+      "q90": 0.2025,
+      "coverage_pct": 78.3,
+      "n_samples": 46
+    },
+    "onion_h5": {
+      "crop": "onion",
+      "horizon": 5,
+      "q10": -0.126,
+      "q90": 0.1846,
+      "coverage_pct": 80.3,
+      "n_samples": 61
+    },
+    "tomato_h5": {
+      "crop": "tomato",
+      "horizon": 5,
+      "q10": -0.2148,
+      "q90": 0.2589,
+      "coverage_pct": 80.0,
+      "n_samples": 40
+    },
+    "onion_h1": {
+      "crop": "onion",
+      "horizon": 1,
+      "q10": -0.0665,
+      "q90": 0.0968,
+      "coverage_pct": 66.7,
+      "n_samples": 12
+    }
+  }
+}
