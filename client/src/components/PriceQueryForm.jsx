@@ -15,14 +15,14 @@ export default function PriceQueryForm({
     (formData.commodity === 'Tomato'
       ? [
           { market: 'Kolhapur', district: 'Kolhapur' },
-          { market: 'Vita', district: 'Sangli' },
+          { market: 'Islampur', district: 'Sangli' },
+          { market: 'Vadgaonpeth', district: 'Kolhapur' },
         ]
       : [
           { market: 'Sangli', district: 'Sangli' },
-          { market: 'Islampur', district: 'Sangli' },
+          { market: 'Kolhapur', district: 'Kolhapur' },
+          { market: 'Vadgaonpeth', district: 'Kolhapur' },
           { market: 'Sangli-Phale-Bhajipala', district: 'Sangli' },
-          { market: 'Vadgaonpeth', district: 'Sangli' },
-          { market: 'Palus', district: 'Sangli' },
         ]);
 
   const handleCommoditySelect = (crop) => {
@@ -134,7 +134,7 @@ export default function PriceQueryForm({
                   {isMr ? 'टोमॅटो (Tomato)' : 'Tomato'}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  {isMr ? 'कोल्हापूर, विटा' : 'Kolhapur, Vita APMC'}
+                  {isMr ? 'कोल्हापूर, इस्लामपूर, वडगावपेठ' : 'Kolhapur, Islampur, Vadgaonpeth'}
                 </div>
               </div>
             </button>
@@ -178,7 +178,7 @@ export default function PriceQueryForm({
                   {isMr ? 'कांदा (Onion)' : 'Onion'}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  {isMr ? 'सांगली, इस्लामपूर, पलूस' : 'Sangli, Islampur, Palus'}
+                  {isMr ? 'सांगली, कोल्हापूर, वडगावपेठ' : 'Sangli, Kolhapur, Vadgaonpeth'}
                 </div>
               </div>
             </button>

@@ -1,4 +1,4 @@
-﻿const express = require("express");
+const express = require("express");
 const router  = express.Router();
 const { getPriceForecast } = require("../services/mlService");
 
@@ -72,14 +72,14 @@ router.get("/markets", (req, res) => {
       markets: {
         Tomato: [
           { market: "Kolhapur", district: "Kolhapur" },
-          { market: "Vita",     district: "Sangli" },
+          { market: "Islampur", district: "Sangli" },
+          { market: "Vadgaonpeth", district: "Kolhapur" },
         ],
         Onion: [
-          { market: "Sangli",                  district: "Sangli" },
-          { market: "Islampur",                district: "Sangli" },
-          { market: "Sangli-Phale-Bhajipala",  district: "Sangli" },
-          { market: "Vadgaonpeth",             district: "Sangli" },
-          { market: "Palus",                   district: "Sangli" },
+          { market: "Sangli", district: "Sangli" },
+          { market: "Kolhapur", district: "Kolhapur" },
+          { market: "Vadgaonpeth", district: "Kolhapur" },
+          { market: "Sangli-Phale-Bhajipala", district: "Sangli" },
         ],
       },
     },

@@ -78,7 +78,7 @@ export default function DayForecastTable({ dailyForecasts, bestSellDate, lang })
 
                 {/* Range */}
                 <td style={{ padding: '12px 14px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                  ₹{Math.round(day.predicted_min_price)} – ₹{Math.round(day.predicted_max_price)}
+                  ₹{Math.round(day.predicted_min_price || (day.predicted_modal_price * 0.95))} – ₹{Math.round(day.predicted_max_price || (day.predicted_modal_price * 1.05))}
                 </td>
 
                 {/* Weather */}

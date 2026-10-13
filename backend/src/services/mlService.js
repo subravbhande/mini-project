@@ -1,8 +1,12 @@
 const { spawn } = require("child_process");
+const fs = require("fs");
 const path = require("path");
 
 const ML_ROOT = path.join(__dirname, "../../../ml_service");
-const PYTHON  = process.env.PYTHON_PATH || "python";
+const venvWin = path.join(ML_ROOT, "venv", "Scripts", "python.exe");
+const venvUnix = path.join(ML_ROOT, "venv", "bin", "python");
+const defaultPython = fs.existsSync(venvWin) ? venvWin : (fs.existsSync(venvUnix) ? venvUnix : "python");
+const PYTHON  = process.env.PYTHON_PATH || defaultPython;
 const SCRIPT  = path.join(ML_ROOT, "predict_api.py");
 
 /**

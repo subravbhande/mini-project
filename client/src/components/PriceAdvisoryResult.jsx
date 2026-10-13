@@ -13,7 +13,7 @@ export default function PriceAdvisoryResult({ result, lang }) {
     district,
     forecast_start_date,
     daily_forecasts = [],
-    summary = {},
+    _summary = {},
     farmer_summary = {},
   } = result;
 
