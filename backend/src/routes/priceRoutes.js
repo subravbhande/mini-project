@@ -1,6 +1,6 @@
 const express = require("express");
 const router  = express.Router();
-const { getPriceForecast } = require("../services/mlService");
+const mlClient = require("../services/mlClient");
 
 /**
  * POST /api/price/forecast
@@ -43,7 +43,7 @@ router.post("/forecast", async (req, res) => {
   }
 
   try {
-    const forecast = await getPriceForecast({
+    const forecast = await mlClient.getPriceForecast({
       commodity,
       market,
       district,
@@ -56,7 +56,9 @@ router.post("/forecast", async (req, res) => {
     res.json({ success: true, data: forecast });
   } catch (err) {
     console.error("[PriceForecast Error]", err.message);
-    res.status(500).json({ success: false, error: err.message });
+    const statusCode = err.response?.status || 500;
+    const errorMsg = err.response?.data?.detail?.error || err.message || "Failed to generate price forecast.";
+    res.status(statusCode).json({ success: false, error: errorMsg });
   }
 });
 

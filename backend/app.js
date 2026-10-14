@@ -1,23 +1,129 @@
 require("dotenv").config();
-const express    = require("express");
-const cors       = require("cors");
-const priceRoutes = require("./src/routes/priceRoutes");
+const express = require("express");
+const cors = require("cors");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const mongoose = require("mongoose");
 
-const app  = express();
+const connectDB = require("./src/config/db");
+const authRoutes = require("./src/routes/authRoutes");
+const batchRoutes = require("./src/routes/batchRoutes");
+const decisionRoutes = require("./src/routes/decisionRoutes");
+const priceRoutes = require("./src/routes/priceRoutes");
+const mlClient = require("./src/services/mlClient");
+
+const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// Initialize Database connection
+connectDB();
 
-// Routes
-app.use("/api/price", priceRoutes);
+// 1. Security HTTP Headers
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
 
-// Health check
-app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", service: "AgriSense Backend", timestamp: new Date().toISOString() });
+// 2. Controlled CORS policy
+const allowedOrigins = [
+  process.env.CLIENT_ORIGIN || "http://localhost:5173",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, backend scripts)
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("CORS policy violation: origin not allowed"));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+// 3. Body parsers with payload limits
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
+
+// 4. Rate Limiting Protection
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300,
+  message: { success: false, error: "Too many requests from this IP, please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const mlLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 60,
+  message: { success: false, error: "Rate limit exceeded for ML prediction requests. Please wait a moment." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30,
+  message: { success: false, error: "Too many authentication attempts, please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply global rate limiter
+app.use("/api", apiLimiter);
+
+// 5. Mount API Routes
+app.use("/api/auth", authLimiter, authRoutes);
+app.use("/api/price", mlLimiter, priceRoutes);
+app.use("/api/decision", mlLimiter, decisionRoutes);
+app.use("/api/batches", batchRoutes);
+
+// 6. Deep System Health Check (Database + ML Service + Backend)
+app.get("/api/health", async (req, res) => {
+  const dbStatus = mongoose.connection.readyState === 1 ? "connected" : "disconnected";
+  const mlStatus = await mlClient.getHealth();
+
+  res.json({
+    status: "ok",
+    service: "AgriSense Backend",
+    timestamp: new Date().toISOString(),
+    database: {
+      status: dbStatus,
+      host: mongoose.connection.host || null,
+    },
+    ml_service: mlStatus,
+  });
+});
+
+// 7. 404 Handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: `Cannot ${req.method} ${req.originalUrl}`,
+  });
+});
+
+// 8. Global Error Handler
+app.use((err, req, res, next) => {
+  console.error("[Backend Error]", err.stack || err.message);
+  const status = err.status || 500;
+  res.status(status).json({
+    success: false,
+    error: err.message || "Internal Server Error",
+    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
+  });
 });
 
 app.listen(PORT, () => {
-  console.log(`AgriSense backend running on http://localhost:${PORT}`);
+  console.log(`AgriSense backend running securely on http://localhost:${PORT}`);
+  console.log(`ML microservice upstream: ${process.env.ML_SERVICE_URL || "http://localhost:8000"}`);
 });

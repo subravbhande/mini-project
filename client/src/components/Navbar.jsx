@@ -1,6 +1,28 @@
 import React from 'react';
 
-export default function Navbar({ lang, setLang }) {
+export default function Navbar({ lang, setLang, systemStatus }) {
+  const isOnline = systemStatus?.status === 'ok';
+  const isMlOnline = systemStatus?.ml_service?.status === 'online';
+  const isDbConnected = systemStatus?.database?.status === 'connected';
+
+  let statusColor = '#22c55e';
+  let statusTextEn = 'XGBoost 49-Feature AI Live';
+  let statusTextMr = 'XGBoost मॉडेल सक्रिय';
+
+  if (!isOnline && systemStatus !== undefined && systemStatus !== null) {
+    statusColor = '#ef4444';
+    statusTextEn = 'Backend Reconnecting';
+    statusTextMr = 'सर्व्हर पुन्हा जोडत आहे';
+  } else if (systemStatus?.ml_service?.fallbackAvailable && !isMlOnline) {
+    statusColor = '#38bdf8';
+    statusTextEn = 'ML Python Bridge Active';
+    statusTextMr = 'पायथन ML सक्रिय';
+  } else if (isMlOnline) {
+    statusColor = '#22c55e';
+    statusTextEn = 'ML Microservice + Backend Live';
+    statusTextMr = 'ML मायक्रोसर्व्हिस सक्रिय';
+  }
+
   return (
     <header style={{
       borderBottom: '1px solid var(--border-subtle)',
@@ -73,16 +95,17 @@ export default function Navbar({ lang, setLang }) {
             borderRadius: '20px',
             fontSize: '0.78rem',
             color: 'var(--text-muted)'
-          }}>
+          }}
+          title={isDbConnected ? 'MongoDB: Connected' : 'MongoDB: Standalone mode'}>
             <span style={{
               width: '8px',
               height: '8px',
               borderRadius: '50%',
-              background: '#22c55e',
-              boxShadow: '0 0 10px #22c55e'
+              background: statusColor,
+              boxShadow: `0 0 10px ${statusColor}`
             }} className="status-pulse" />
             <span>
-              {lang === 'mr' ? 'XGBoost मॉडेल सक्रिय' : 'XGBoost 49-Feature AI Live'}
+              {lang === 'mr' ? statusTextMr : statusTextEn}
             </span>
           </div>
 

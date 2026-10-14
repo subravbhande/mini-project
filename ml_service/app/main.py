@@ -40,6 +40,8 @@ class PriceForecastRequest(BaseModel):
     district: Optional[str] = Field(None, description="District: 'Kolhapur' or 'Sangli'")
     horizon_days: int = Field(5, ge=1, le=5, description="Forecast horizon (1 to 5 days)")
     as_of: Optional[str] = Field(None, description="Cutoff date YYYY-MM-DD")
+    start_date: Optional[str] = Field(None, description="Start date (alias for as_of)")
+    quantity_quintals: Optional[float] = Field(0.0, description="Farmer harvest quantity in quintals")
     weather_forecast: Optional[List[Dict[str, Any]]] = Field(None, description="Optional daily weather forecast")
 
 
@@ -87,6 +89,18 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+def get_price_model(app_instance: FastAPI = app) -> PriceModel:
+    if not hasattr(app_instance.state, "price_model") or app_instance.state.price_model is None:
+        logger.info("Initializing PriceModel on demand...")
+        app_instance.state.price_model = PriceModel.load()
+    return app_instance.state.price_model
+
+def get_decay_model(app_instance: FastAPI = app) -> DecayModel:
+    if not hasattr(app_instance.state, "decay_model") or app_instance.state.decay_model is None:
+        logger.info("Initializing DecayModel on demand...")
+        app_instance.state.decay_model = DecayModel()
+    return app_instance.state.decay_model
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -112,7 +126,7 @@ def health_check():
 @app.get("/series")
 def list_supported_series():
     """Return all verified (crop, market, district) combinations."""
-    price_model: PriceModel = app.state.price_model
+    price_model: PriceModel = get_price_model(app)
     return {
         "count": len(price_model.supported_series),
         "supported_series": price_model.supported_series,
@@ -122,17 +136,69 @@ def list_supported_series():
 @app.post("/price/forecast")
 def forecast_price(req: PriceForecastRequest):
     """Generate 1-5 day direct multi-step price forecast with uncertainty bands."""
-    price_model: PriceModel = app.state.price_model
+    price_model: PriceModel = get_price_model(app)
     try:
+        as_of_date = req.as_of or req.start_date
         result = price_model.predict(
             commodity=req.commodity,
             market=req.market,
             district=req.district,
             horizon_days=req.horizon_days,
-            as_of=req.as_of,
+            as_of=as_of_date,
             weather_forecast=req.weather_forecast,
         )
-        return result.to_dict()
+        res_dict = result.to_dict()
+
+        # Add farmer-friendly summary and UI compatibility fields
+        daily = res_dict.get("daily_forecasts", [])
+        if daily:
+            for d in daily:
+                d["predicted_min_price"] = d.get("typical_daily_spread_min") or d.get("confidence_band_low") or round(d["predicted_modal_price"] * 0.95, 2)
+                d["predicted_max_price"] = d.get("typical_daily_spread_max") or d.get("confidence_band_high") or round(d["predicted_modal_price"] * 1.05, 2)
+                if "weather" not in d:
+                    d["weather"] = {
+                        "temp_max_c": 31,
+                        "precipitation_mm": 25 if d.get("weather_risk_flag") else 0,
+                    }
+
+            best_day = max(daily, key=lambda d: d["predicted_modal_price"])
+            worst_day = min(daily, key=lambda d: d["predicted_modal_price"])
+            avg_price = round(sum(d["predicted_modal_price"] for d in daily) / len(daily), 2)
+
+            summary_obj = res_dict.get("summary", {})
+            overall_trend = summary_obj.get("overall_trend", "STABLE")
+            price_trend = "UP" if overall_trend == "RISING" else ("DOWN" if overall_trend == "FALLING" else "STABLE")
+            weather_risk_dates = [d["date"] for d in daily if d.get("weather_risk_flag")]
+
+            summary_obj["forecast_avg_price"] = avg_price
+            summary_obj["price_trend"] = price_trend
+            summary_obj["weather_risk_days"] = len(weather_risk_dates)
+            res_dict["summary"] = summary_obj
+
+            farmer_summary = {
+                "best_sell_date": best_day["date"],
+                "best_sell_price": best_day["predicted_modal_price"],
+                "worst_sell_date": worst_day["date"],
+                "worst_sell_price": worst_day["predicted_modal_price"],
+                "price_trend": price_trend,
+                "weather_risk_days": weather_risk_dates,
+                "recommendation": (
+                    "SELL_NOW" if price_trend == "DOWN"
+                    else "HOLD_FOR_BEST_PRICE" if price_trend == "UP"
+                    else "SELL_ANYTIME"
+                ),
+            }
+
+            qty = float(req.quantity_quintals or 0.0)
+            if qty > 0:
+                farmer_summary["estimated_earnings_best_day"] = round(best_day["predicted_modal_price"] * qty, 2)
+                farmer_summary["estimated_earnings_today"] = round(daily[0]["predicted_modal_price"] * qty, 2)
+                farmer_summary["estimated_earnings_avg"] = round(avg_price * qty, 2)
+                farmer_summary["quantity_quintals"] = qty
+
+            res_dict["farmer_summary"] = farmer_summary
+
+        return res_dict
     except UnsupportedSeriesError as e:
         logger.warning(f"Unsupported series requested: {e}")
         raise HTTPException(
@@ -147,7 +213,7 @@ def forecast_price(req: PriceForecastRequest):
 @app.post("/decay/simulate")
 def simulate_decay(req: DecaySimulateRequest):
     """Run shelf-life and quality degradation simulation."""
-    decay_model: DecayModel = app.state.decay_model
+    decay_model: DecayModel = get_decay_model(app)
     try:
         result = decay_model.simulate(
             crop=req.crop,
@@ -171,8 +237,8 @@ def get_timing_decision(req: DecisionRequest):
     Combined decision endpoint:
     Runs price forecast + decay simulation + economic NRV optimizer.
     """
-    price_model: PriceModel = app.state.price_model
-    decay_model: DecayModel = app.state.decay_model
+    price_model: PriceModel = get_price_model(app)
+    decay_model: DecayModel = get_decay_model(app)
 
     try:
         # 1. Price Forecast (5 days)

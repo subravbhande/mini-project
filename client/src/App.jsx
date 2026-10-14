@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import PriceQueryForm from './components/PriceQueryForm';
 import PriceAdvisoryResult from './components/PriceAdvisoryResult';
-import { fetchMarkets, fetchPriceForecast } from './services/priceApi';
+import { fetchMarkets, fetchPriceForecast, fetchHealth } from './services/priceApi';
 
 function App() {
   const [lang, setLang] = useState('en');
   const [marketsData, setMarketsData] = useState(null);
+  const [systemStatus, setSystemStatus] = useState(null);
   const [formData, setFormData] = useState({
     commodity: 'Tomato',
     market: 'Kolhapur',
@@ -18,9 +19,17 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch available markets on mount
+  // Fetch system health and available markets on mount
   useEffect(() => {
-    async function loadMarkets() {
+    async function loadInitialData() {
+      try {
+        const health = await fetchHealth();
+        setSystemStatus(health);
+      } catch (err) {
+        console.warn('Backend health check warning:', err.message);
+        setSystemStatus({ status: 'error' });
+      }
+
       try {
         const data = await fetchMarkets();
         setMarketsData(data);
@@ -28,7 +37,7 @@ function App() {
         console.warn('Could not load markets from backend, using defaults:', err.message);
       }
     }
-    loadMarkets();
+    loadInitialData();
   }, []);
 
   // Submit farmer query
@@ -64,7 +73,7 @@ function App() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Navbar lang={lang} setLang={setLang} />
+      <Navbar lang={lang} setLang={setLang} systemStatus={systemStatus} />
 
       <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px', flex: 1, width: '100%' }}>
         {/* Hero Intro */}
