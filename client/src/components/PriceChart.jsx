@@ -10,39 +10,45 @@ import {
   ReferenceLine,
 } from 'recharts';
 
-function ChartTooltip({ active, payload, isMr }) {
+function ChartTooltip({ active, payload, isMr, theme }) {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
+    const isDark = theme === 'dark';
+
     return (
       <div style={{
-        background: 'rgba(15, 23, 42, 0.95)',
-        border: data.isBest ? '2px solid #22c55e' : '1px solid rgba(255, 255, 255, 0.15)',
+        background: 'var(--chart-tooltip-bg)',
+        border: data.isBest
+          ? '2px solid var(--accent-green)'
+          : '1px solid var(--chart-tooltip-border)',
         borderRadius: '12px',
         padding: '12px 16px',
-        boxShadow: '0 10px 25px rgba(0,0,0,0.6)',
-        backdropFilter: 'blur(8px)',
+        boxShadow: isDark
+          ? '0 10px 25px rgba(0,0,0,0.6)'
+          : '0 10px 25px rgba(0,0,0,0.12)',
+        backdropFilter: 'blur(10px)',
         minWidth: '200px'
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-          <span style={{ fontWeight: 700, color: '#fff', fontSize: '0.9rem' }}>
+          <span style={{ fontWeight: 700, color: 'var(--chart-tooltip-text)', fontSize: '0.9rem' }}>
             {data.displayDate}
           </span>
           {data.isBest && (
             <span style={{
-              background: 'rgba(34, 197, 94, 0.2)',
-              color: '#4ade80',
+              background: isDark ? 'rgba(34, 197, 94, 0.2)' : 'rgba(22, 163, 74, 0.15)',
+              color: 'var(--text-emerald)',
               fontSize: '0.7rem',
               fontWeight: 700,
               padding: '2px 6px',
               borderRadius: '4px',
-              border: '1px solid rgba(34, 197, 94, 0.4)'
+              border: '1px solid var(--border-highlight)'
             }}>
               ⭐ {isMr ? 'सर्वोत्तम दिवस' : 'BEST DAY'}
             </span>
           )}
         </div>
 
-        <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#38bdf8', marginBottom: '4px' }}>
+        <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-blue)', marginBottom: '4px' }}>
           ₹{data.price.toLocaleString()} <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>/ qtl</span>
         </div>
 
@@ -51,7 +57,7 @@ function ChartTooltip({ active, payload, isMr }) {
         </div>
 
         <div style={{
-          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+          borderTop: '1px solid var(--border-subtle)',
           paddingTop: '6px',
           display: 'flex',
           justifyContent: 'space-between',
@@ -69,8 +75,9 @@ function ChartTooltip({ active, payload, isMr }) {
   return null;
 }
 
-export default function PriceChart({ dailyForecasts, bestSellDate, lang }) {
+export default function PriceChart({ dailyForecasts, bestSellDate, lang, theme }) {
   const isMr = lang === 'mr';
+  const isDark = theme === 'dark';
 
   if (!dailyForecasts || dailyForecasts.length === 0) return null;
 
@@ -108,49 +115,55 @@ export default function PriceChart({ dailyForecasts, bestSellDate, lang }) {
     Math.ceil((maxVal * 1.05) / 50) * 50,
   ];
 
+  const gridStroke = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.07)';
+  const axisColor = isDark ? '#94a3b8' : '#64748b';
+  const lineStroke = isDark ? '#10b981' : '#059669';
+  const refLabelColor = isDark ? '#4ade80' : '#15803d';
+
   return (
     <div style={{ width: '100%', height: '320px', marginTop: '16px' }}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={chartData} margin={{ top: 20, right: 20, left: -10, bottom: 0 }}>
           <defs>
             <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-              <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+              <stop offset="5%" stopColor={lineStroke} stopOpacity={isDark ? 0.4 : 0.3} />
+              <stop offset="95%" stopColor={lineStroke} stopOpacity={0.0} />
             </linearGradient>
             <linearGradient id="rangeGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.2} />
+              <stop offset="5%" stopColor="#38bdf8" stopOpacity={isDark ? 0.2 : 0.15} />
               <stop offset="95%" stopColor="#38bdf8" stopOpacity={0.0} />
             </linearGradient>
           </defs>
 
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.05)" />
+          <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
           
           <XAxis
             dataKey="displayDate"
-            stroke="var(--text-muted)"
+            stroke={axisColor}
             fontSize={12}
             tickLine={false}
           />
           <YAxis
             domain={yDomain}
-            stroke="var(--text-muted)"
+            stroke={axisColor}
             fontSize={12}
             tickLine={false}
             tickFormatter={(val) => `₹${val}`}
           />
 
-          <Tooltip content={<ChartTooltip isMr={isMr} />} />
+          <Tooltip content={<ChartTooltip isMr={isMr} theme={theme} />} />
 
           {bestSellDate && (
             <ReferenceLine
               x={chartData.find((d) => d.date === bestSellDate)?.displayDate}
-              stroke="#22c55e"
+              stroke="var(--accent-green)"
               strokeDasharray="4 4"
               strokeWidth={2}
               label={{
                 value: isMr ? 'सर्वोत्तम विक्री' : 'Best Sell',
-                fill: '#4ade80',
+                fill: refLabelColor,
                 fontSize: 12,
+                fontWeight: 700,
                 position: 'top',
               }}
             />
@@ -160,7 +173,7 @@ export default function PriceChart({ dailyForecasts, bestSellDate, lang }) {
           <Area
             type="monotone"
             dataKey="maxPrice"
-            stroke="rgba(56, 189, 248, 0.4)"
+            stroke="rgba(56, 189, 248, 0.45)"
             strokeDasharray="2 2"
             fill="url(#rangeGradient)"
             name="Max Range"
@@ -170,11 +183,11 @@ export default function PriceChart({ dailyForecasts, bestSellDate, lang }) {
           <Area
             type="monotone"
             dataKey="price"
-            stroke="#10b981"
+            stroke={lineStroke}
             strokeWidth={3}
             fill="url(#priceGradient)"
             name="Predicted Price"
-            activeDot={{ r: 7, fill: '#10b981', stroke: '#fff', strokeWidth: 2 }}
+            activeDot={{ r: 7, fill: lineStroke, stroke: isDark ? '#fff' : '#ffffff', strokeWidth: 2 }}
           />
         </AreaChart>
       </ResponsiveContainer>

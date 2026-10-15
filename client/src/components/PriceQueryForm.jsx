@@ -7,8 +7,10 @@ export default function PriceQueryForm({
   onSubmit,
   loading,
   lang,
+  theme,
 }) {
   const isMr = lang === 'mr';
+  const isDark = theme === 'dark';
 
   const defaultMarkets = {
     Tomato: [
@@ -86,11 +88,14 @@ export default function PriceQueryForm({
         { id: 'cold_storage', name: isMr ? 'कोल्ड स्टोरेज (Cold)' : 'Cold Storage' },
       ];
 
+  const isTomatoSelected = formData.commodity === 'Tomato';
+  const isOnionSelected = formData.commodity === 'Onion';
+
   return (
     <div className="glass-card" style={{ padding: '24px', position: 'relative' }}>
       {/* Header */}
       <div style={{ marginBottom: '20px' }}>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-title)', marginBottom: '4px' }}>
           {isMr ? 'शेतकरी इनपुट फॉर्म (Farmer Input)' : 'Enter Your Harvest Details'}
         </h2>
         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
@@ -120,8 +125,12 @@ export default function PriceQueryForm({
               type="button"
               onClick={() => handleCommoditySelect('Tomato')}
               style={{
-                background: formData.commodity === 'Tomato' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(15, 23, 42, 0.6)',
-                border: formData.commodity === 'Tomato' ? '2px solid #ef4444' : '1px solid var(--border-subtle)',
+                background: isTomatoSelected
+                  ? (isDark ? 'rgba(239, 68, 68, 0.16)' : 'rgba(239, 68, 68, 0.1)')
+                  : 'var(--bg-subtle)',
+                border: isTomatoSelected
+                  ? '2px solid #ef4444'
+                  : '1px solid var(--border-subtle)',
                 borderRadius: '12px',
                 padding: '12px',
                 display: 'flex',
@@ -129,12 +138,13 @@ export default function PriceQueryForm({
                 gap: '10px',
                 cursor: 'pointer',
                 textAlign: 'left',
-                transition: 'all 0.2s',
+                transition: 'all 0.2s ease',
+                boxShadow: isTomatoSelected ? '0 4px 12px rgba(239, 68, 68, 0.18)' : 'none',
               }}
             >
               <span style={{ fontSize: '1.8rem' }}>🍅</span>
               <div>
-                <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem' }}>
+                <div style={{ fontWeight: 700, color: 'var(--text-title)', fontSize: '0.95rem' }}>
                   {isMr ? 'टोमॅटो' : 'Tomato'}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -148,8 +158,12 @@ export default function PriceQueryForm({
               type="button"
               onClick={() => handleCommoditySelect('Onion')}
               style={{
-                background: formData.commodity === 'Onion' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(15, 23, 42, 0.6)',
-                border: formData.commodity === 'Onion' ? '2px solid #f59e0b' : '1px solid var(--border-subtle)',
+                background: isOnionSelected
+                  ? (isDark ? 'rgba(245, 158, 11, 0.16)' : 'rgba(245, 158, 11, 0.1)')
+                  : 'var(--bg-subtle)',
+                border: isOnionSelected
+                  ? '2px solid #f59e0b'
+                  : '1px solid var(--border-subtle)',
                 borderRadius: '12px',
                 padding: '12px',
                 display: 'flex',
@@ -157,12 +171,13 @@ export default function PriceQueryForm({
                 gap: '10px',
                 cursor: 'pointer',
                 textAlign: 'left',
-                transition: 'all 0.2s',
+                transition: 'all 0.2s ease',
+                boxShadow: isOnionSelected ? '0 4px 12px rgba(245, 158, 11, 0.18)' : 'none',
               }}
             >
               <span style={{ fontSize: '1.8rem' }}>🧅</span>
               <div>
-                <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem' }}>
+                <div style={{ fontWeight: 700, color: 'var(--text-title)', fontSize: '0.95rem' }}>
                   {isMr ? 'कांदा' : 'Onion'}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -229,10 +244,11 @@ export default function PriceQueryForm({
               display: 'flex',
               alignItems: 'center',
               padding: '0 14px',
-              background: 'rgba(255,255,255,0.06)',
+              background: 'var(--bg-pill)',
+              border: '1px solid var(--border-subtle)',
               borderRadius: '10px',
               fontSize: '0.85rem',
-              color: 'var(--text-muted)',
+              color: 'var(--text-body)',
               fontWeight: 600
             }}>
               {isMr ? 'क्विंटल' : 'Quintals'}
@@ -246,14 +262,18 @@ export default function PriceQueryForm({
                 type="button"
                 onClick={() => addQty(amt)}
                 style={{
-                  background: 'rgba(255,255,255,0.04)',
+                  background: 'var(--bg-pill)',
                   border: '1px solid var(--border-subtle)',
                   borderRadius: '6px',
-                  color: 'var(--text-muted)',
+                  color: 'var(--text-body)',
                   padding: '4px 10px',
                   fontSize: '0.75rem',
+                  fontWeight: 600,
                   cursor: 'pointer',
+                  transition: 'background 0.15s, transform 0.15s',
                 }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-pill-hover)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--bg-pill)')}
               >
                 +{amt} qtl
               </button>
@@ -331,14 +351,19 @@ export default function PriceQueryForm({
               type="button"
               onClick={() => setFormData((prev) => ({ ...prev, horizon_days: 3 }))}
               style={{
-                background: formData.horizon_days === 3 ? 'rgba(34, 197, 94, 0.15)' : 'rgba(15, 23, 42, 0.6)',
-                border: formData.horizon_days === 3 ? '1.5px solid var(--accent-green)' : '1px solid var(--border-subtle)',
+                background: formData.horizon_days === 3
+                  ? 'rgba(34, 197, 94, 0.15)'
+                  : 'var(--bg-subtle)',
+                border: formData.horizon_days === 3
+                  ? '1.5px solid var(--accent-green)'
+                  : '1px solid var(--border-subtle)',
                 borderRadius: '8px',
                 padding: '10px',
-                color: formData.horizon_days === 3 ? '#fff' : 'var(--text-muted)',
+                color: formData.horizon_days === 3 ? 'var(--text-title)' : 'var(--text-muted)',
                 fontWeight: 600,
                 fontSize: '0.85rem',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
               }}
             >
               📅 {isMr ? '३ दिवस (जलद अंदाज)' : '3 Days (Fast)'}
@@ -347,14 +372,19 @@ export default function PriceQueryForm({
               type="button"
               onClick={() => setFormData((prev) => ({ ...prev, horizon_days: 5 }))}
               style={{
-                background: formData.horizon_days === 5 ? 'rgba(34, 197, 94, 0.15)' : 'rgba(15, 23, 42, 0.6)',
-                border: formData.horizon_days === 5 ? '1.5px solid var(--accent-green)' : '1px solid var(--border-subtle)',
+                background: formData.horizon_days === 5
+                  ? 'rgba(34, 197, 94, 0.15)'
+                  : 'var(--bg-subtle)',
+                border: formData.horizon_days === 5
+                  ? '1.5px solid var(--accent-green)'
+                  : '1px solid var(--border-subtle)',
                 borderRadius: '8px',
                 padding: '10px',
-                color: formData.horizon_days === 5 ? '#fff' : 'var(--text-muted)',
+                color: formData.horizon_days === 5 ? 'var(--text-title)' : 'var(--text-muted)',
                 fontWeight: 600,
                 fontSize: '0.85rem',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
               }}
             >
               🗓️ {isMr ? '५ दिवस (शिफारस केलेले)' : '5 Days (Recommended)'}
@@ -393,17 +423,17 @@ export default function PriceQueryForm({
           color: 'var(--text-muted)'
         }}>
           <span>{isMr ? 'नमुना चाचणी (Quick Presets):' : 'Try Quick Presets:'}</span>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <span
               onClick={() => loadPreset('Tomato', 'Kolhapur', 'Kolhapur', 50)}
-              style={{ color: 'var(--text-emerald)', cursor: 'pointer', textDecoration: 'underline' }}
+              style={{ color: 'var(--text-emerald)', cursor: 'pointer', fontWeight: 600, textDecoration: 'underline' }}
             >
               Tomato Kolhapur 50q
             </span>
             <span>•</span>
             <span
               onClick={() => loadPreset('Onion', 'Sangli-Phale-Bhajipala', 'Sangli', 100)}
-              style={{ color: 'var(--text-gold)', cursor: 'pointer', textDecoration: 'underline' }}
+              style={{ color: 'var(--text-gold)', cursor: 'pointer', fontWeight: 600, textDecoration: 'underline' }}
             >
               Onion Sangli 100q
             </span>

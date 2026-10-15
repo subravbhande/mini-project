@@ -1,32 +1,159 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
 
-:root {
+/* ==========================================================================
+   Design Tokens & Themes (Dark & Light)
+   ========================================================================== */
+
+:root,
+[data-theme="dark"] {
+  --theme-name: 'dark';
+
+  /* Surface & Background */
   --bg-main: #0a0f18;
+  --bg-gradient-mesh: 
+    radial-gradient(at 10% 20%, rgba(16, 185, 129, 0.08) 0px, transparent 50%),
+    radial-gradient(at 90% 10%, rgba(56, 189, 248, 0.06) 0px, transparent 50%),
+    radial-gradient(at 50% 90%, rgba(139, 92, 246, 0.06) 0px, transparent 60%);
   --bg-card: rgba(18, 26, 43, 0.85);
   --bg-card-hover: rgba(26, 38, 62, 0.95);
+  --bg-nav: rgba(10, 15, 24, 0.82);
+  --bg-footer: rgba(10, 15, 24, 0.92);
+  --bg-subtle: rgba(15, 23, 42, 0.65);
+  --bg-subtle-hover: rgba(30, 41, 59, 0.8);
+  --bg-pill: rgba(255, 255, 255, 0.06);
+  --bg-pill-hover: rgba(255, 255, 255, 0.12);
+  --bg-input: rgba(15, 23, 42, 0.7);
+  --bg-input-focus: rgba(15, 23, 42, 0.95);
+
+  /* Borders */
   --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-subtle-hover: rgba(255, 255, 255, 0.16);
+  --border-card: rgba(255, 255, 255, 0.08);
+  --border-input: rgba(255, 255, 255, 0.14);
   --border-highlight: rgba(34, 197, 94, 0.4);
 
+  /* Typography Colors */
+  --text-title: #ffffff;
+  --text-main: #f8fafc;
+  --text-body: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-faint: #64748b;
+  --text-emerald: #34d399;
+  --text-gold: #fbbf24;
+  --text-blue: #38bdf8;
+  --text-red: #f87171;
+
+  /* Accent Branding */
   --emerald-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
   --amber-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   --tomato-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   --onion-gradient: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
-
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --text-emerald: #34d399;
-  --text-gold: #fbbf24;
 
   --accent-green: #22c55e;
   --accent-amber: #f59e0b;
   --accent-red: #ef4444;
   --accent-blue: #38bdf8;
 
+  /* Shadows */
   --shadow-glow: 0 0 25px rgba(34, 197, 94, 0.18);
   --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
+  --shadow-toggle: 0 2px 8px rgba(0, 0, 0, 0.4);
+
+  /* Chart & Visualization */
+  --chart-grid: rgba(255, 255, 255, 0.06);
+  --chart-tooltip-bg: rgba(15, 23, 42, 0.95);
+  --chart-tooltip-border: rgba(255, 255, 255, 0.15);
+  --chart-tooltip-text: #ffffff;
+  --chart-axis-text: #94a3b8;
+  --chart-best-label: #4ade80;
+
+  /* Form Elements Native Colors */
+  --select-option-bg: #0f172a;
+  --select-option-color: #f8fafc;
+
+  /* Scrollbar */
+  --scrollbar-track: #0f172a;
+  --scrollbar-thumb: #334155;
+  --scrollbar-thumb-hover: #475569;
 
   --font-sans: 'Plus Jakarta Sans', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, sans-serif;
 }
+
+[data-theme="light"] {
+  --theme-name: 'light';
+
+  /* Surface & Background */
+  --bg-main: #f4f6fa;
+  --bg-gradient-mesh: 
+    radial-gradient(at 10% 20%, rgba(16, 185, 129, 0.07) 0px, transparent 50%),
+    radial-gradient(at 90% 10%, rgba(14, 165, 233, 0.06) 0px, transparent 50%),
+    radial-gradient(at 50% 90%, rgba(139, 92, 246, 0.04) 0px, transparent 60%);
+  --bg-card: rgba(255, 255, 255, 0.88);
+  --bg-card-hover: rgba(255, 255, 255, 0.98);
+  --bg-nav: rgba(255, 255, 255, 0.85);
+  --bg-footer: rgba(241, 245, 249, 0.92);
+  --bg-subtle: #edf2f7;
+  --bg-subtle-hover: #e2e8f0;
+  --bg-pill: #e2e8f0;
+  --bg-pill-hover: #cbd5e1;
+  --bg-input: #ffffff;
+  --bg-input-focus: #ffffff;
+
+  /* Borders */
+  --border-subtle: rgba(148, 163, 184, 0.26);
+  --border-subtle-hover: rgba(100, 116, 139, 0.4);
+  --border-card: rgba(148, 163, 184, 0.22);
+  --border-input: #cbd5e1;
+  --border-highlight: rgba(16, 185, 129, 0.6);
+
+  /* Typography Colors */
+  --text-title: #0f172a;
+  --text-main: #1e293b;
+  --text-body: #334155;
+  --text-muted: #64748b;
+  --text-faint: #94a3b8;
+  --text-emerald: #059669;
+  --text-gold: #b45309;
+  --text-blue: #0284c7;
+  --text-red: #dc2626;
+
+  /* Accent Branding */
+  --emerald-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --amber-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  --tomato-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  --onion-gradient: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+
+  --accent-green: #16a34a;
+  --accent-amber: #d97706;
+  --accent-red: #dc2626;
+  --accent-blue: #0284c7;
+
+  /* Shadows */
+  --shadow-glow: 0 0 25px rgba(16, 185, 129, 0.16);
+  --shadow-card: 0 10px 25px -4px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+  --shadow-toggle: 0 2px 8px rgba(0, 0, 0, 0.12);
+
+  /* Chart & Visualization */
+  --chart-grid: rgba(0, 0, 0, 0.06);
+  --chart-tooltip-bg: rgba(255, 255, 255, 0.98);
+  --chart-tooltip-border: rgba(148, 163, 184, 0.35);
+  --chart-tooltip-text: #0f172a;
+  --chart-axis-text: #64748b;
+  --chart-best-label: #15803d;
+
+  /* Form Elements Native Colors */
+  --select-option-bg: #ffffff;
+  --select-option-color: #0f172a;
+
+  /* Scrollbar */
+  --scrollbar-track: #f1f5f9;
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-thumb-hover: #94a3b8;
+}
+
+/* ==========================================================================
+   Base & Resets
+   ========================================================================== */
 
 * {
   box-sizing: border-box;
@@ -34,18 +161,20 @@
   padding: 0;
 }
 
+html {
+  transition: color-scheme 0.25s ease;
+}
+
 body {
   background-color: var(--bg-main);
-  background-image: 
-    radial-gradient(at 10% 20%, rgba(16, 185, 129, 0.08) 0px, transparent 50%),
-    radial-gradient(at 90% 10%, rgba(56, 189, 248, 0.06) 0px, transparent 50%),
-    radial-gradient(at 50% 90%, rgba(139, 92, 246, 0.06) 0px, transparent 60%);
+  background-image: var(--bg-gradient-mesh);
   background-attachment: fixed;
   color: var(--text-main);
   font-family: var(--font-sans);
   min-height: 100vh;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.25s ease, color 0.2s ease;
 }
 
 #root {
@@ -54,19 +183,23 @@ body {
   flex-direction: column;
 }
 
+/* ==========================================================================
+   Components & Glassmorphism
+   ========================================================================== */
+
 /* Glass Card */
 .glass-card {
   background: var(--bg-card);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-card);
   border-radius: 16px;
   box-shadow: var(--shadow-card);
-  transition: all 0.25s ease;
+  transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease;
 }
 
 .glass-card:hover {
-  border-color: rgba(255, 255, 255, 0.14);
+  border-color: var(--border-subtle-hover);
 }
 
 /* Custom Scrollbar */
@@ -75,14 +208,14 @@ body {
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: var(--scrollbar-track);
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Glow Animations */
@@ -101,12 +234,12 @@ body {
   animation: pulseBadge 2s infinite ease-in-out;
 }
 
-/* Input Fields */
+/* Input Fields & Selects */
 .input-base {
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--bg-input);
+  border: 1px solid var(--border-input);
   border-radius: 10px;
-  color: var(--text-main);
+  color: var(--text-title);
   padding: 10px 14px;
   font-size: 0.95rem;
   font-family: inherit;
@@ -117,8 +250,14 @@ body {
 
 .input-base:focus {
   border-color: var(--accent-green);
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
-  background: rgba(15, 23, 42, 0.95);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.18);
+  background: var(--bg-input-focus);
+}
+
+/* Option tags inside select element */
+.input-base option {
+  background-color: var(--select-option-bg);
+  color: var(--select-option-color);
 }
 
 /* Primary Button */
@@ -153,6 +292,42 @@ body {
   opacity: 0.6;
   cursor: not-allowed;
   filter: grayscale(0.5);
+}
+
+/* Toggle Switch Buttons */
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 5px 12px;
+  color: var(--text-title);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-toggle);
+}
+
+.theme-toggle-btn:hover {
+  background: var(--bg-subtle-hover);
+  border-color: var(--border-subtle-hover);
+  transform: translateY(-1px);
+}
+
+.theme-toggle-btn:active {
+  transform: translateY(0);
+}
+
+.theme-icon-rotate {
+  display: inline-block;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.theme-toggle-btn:hover .theme-icon-rotate {
+  transform: rotate(20deg) scale(1.1);
 }
 
 /* Spinner */

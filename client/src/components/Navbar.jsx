@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function Navbar({ lang, setLang, systemStatus }) {
+export default function Navbar({ lang, setLang, systemStatus, theme, toggleTheme }) {
   const isOnline = systemStatus?.status === 'ok';
   const isMlOnline = systemStatus?.ml_service?.status === 'online';
   const isDbConnected = systemStatus?.database?.status === 'connected';
@@ -23,15 +23,20 @@ export default function Navbar({ lang, setLang, systemStatus }) {
     statusTextMr = 'ML मायक्रोसर्व्हिस सक्रिय';
   }
 
+  const isDark = theme === 'dark';
+  const isMr = lang === 'mr';
+
   return (
     <header style={{
       borderBottom: '1px solid var(--border-subtle)',
-      background: 'rgba(10, 15, 24, 0.8)',
-      backdropFilter: 'blur(12px)',
+      background: 'var(--bg-nav)',
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
       position: 'sticky',
       top: 0,
       zIndex: 50,
       padding: '14px 24px',
+      transition: 'background 0.25s ease, border-color 0.25s ease',
     }}>
       <div style={{
         maxWidth: '1280px',
@@ -59,7 +64,7 @@ export default function Navbar({ lang, setLang, systemStatus }) {
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#fff' }}>
+              <span style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-title)' }}>
                 AgriSense
               </span>
               <span style={{
@@ -75,26 +80,27 @@ export default function Navbar({ lang, setLang, systemStatus }) {
               </span>
             </div>
             <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              {lang === 'mr' 
+              {isMr 
                 ? 'कृत्रिम बुद्धिमत्ता बाजारभाव अंदाज व विक्री सल्लागार' 
                 : 'AI-Powered Mandi Price Forecast & Decision Advisory'}
             </p>
           </div>
         </div>
 
-        {/* Right side widgets */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        {/* Right side controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           {/* Status Indicator */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            background: 'rgba(15, 23, 42, 0.7)',
+            background: 'var(--bg-subtle)',
             border: '1px solid var(--border-subtle)',
             padding: '6px 14px',
             borderRadius: '20px',
             fontSize: '0.78rem',
-            color: 'var(--text-muted)'
+            color: 'var(--text-muted)',
+            transition: 'background 0.2s, border-color 0.2s',
           }}
           title={isDbConnected ? 'MongoDB: Connected' : 'MongoDB: Standalone mode'}>
             <span style={{
@@ -104,18 +110,39 @@ export default function Navbar({ lang, setLang, systemStatus }) {
               background: statusColor,
               boxShadow: `0 0 10px ${statusColor}`
             }} className="status-pulse" />
-            <span>
-              {lang === 'mr' ? statusTextMr : statusTextEn}
+            <span style={{ color: 'var(--text-body)', fontWeight: 500 }}>
+              {isMr ? statusTextMr : statusTextEn}
             </span>
           </div>
+
+          {/* Theme Toggle Button */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="theme-toggle-btn"
+            title={isDark 
+              ? (isMr ? 'लाईट मोड सुरू करा (Switch to Light Mode)' : 'Switch to Light Mode') 
+              : (isMr ? 'डार्क मोड सुरू करा (Switch to Dark Mode)' : 'Switch to Dark Mode')}
+            aria-label="Toggle theme"
+          >
+            <span className="theme-icon-rotate" style={{ fontSize: '1rem' }}>
+              {isDark ? '☀️' : '🌙'}
+            </span>
+            <span>
+              {isDark 
+                ? (isMr ? 'प्रकाश' : 'Light') 
+                : (isMr ? 'गडद' : 'Dark')}
+            </span>
+          </button>
 
           {/* Language Switch */}
           <div style={{
             display: 'flex',
-            background: 'rgba(15, 23, 42, 0.8)',
+            background: 'var(--bg-subtle)',
             border: '1px solid var(--border-subtle)',
             borderRadius: '10px',
-            padding: '3px'
+            padding: '3px',
+            transition: 'background 0.2s, border-color 0.2s',
           }}>
             <button
               onClick={() => setLang('en')}

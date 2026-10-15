@@ -6,6 +6,16 @@ import { fetchMarkets, fetchPriceForecast, evaluateTimingDecision, fetchHealth }
 
 function App() {
   const [lang, setLang] = useState('en');
+  const [theme, setTheme] = useState(() => {
+    try {
+      const saved = localStorage.getItem('agrisense_theme');
+      if (saved === 'dark' || saved === 'light') return saved;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    } catch {
+      return 'dark';
+    }
+  });
+
   const [marketsData, setMarketsData] = useState(null);
   const [systemStatus, setSystemStatus] = useState(null);
   const [formData, setFormData] = useState({
@@ -20,6 +30,20 @@ function App() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Sync theme with HTML document attribute & localStorage
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    try {
+      localStorage.setItem('agrisense_theme', theme);
+    } catch (e) {
+      console.warn('Could not persist theme to localStorage', e);
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
 
   // Fetch system health and available markets on mount
   useEffect(() => {
@@ -93,23 +117,29 @@ function App() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Navbar lang={lang} setLang={setLang} systemStatus={systemStatus} />
+      <Navbar
+        lang={lang}
+        setLang={setLang}
+        systemStatus={systemStatus}
+        theme={theme}
+        toggleTheme={toggleTheme}
+      />
 
-      <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px', flex: 1, width: '100%' }}>
+      <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '28px 24px', flex: 1, width: '100%' }}>
         {/* Hero Intro */}
-        <div style={{ textAlign: 'center', marginBottom: '28px', maxWidth: '820px', margin: '0 auto 28px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '32px', maxWidth: '840px', margin: '0 auto 32px' }}>
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
             gap: '8px',
             background: 'rgba(16, 185, 129, 0.12)',
-            border: '1px solid rgba(16, 185, 129, 0.3)',
+            border: '1px solid rgba(16, 185, 129, 0.35)',
             borderRadius: '20px',
-            padding: '5px 16px',
-            fontSize: '0.8rem',
+            padding: '6px 18px',
+            fontSize: '0.82rem',
             color: 'var(--text-emerald)',
             fontWeight: 700,
-            marginBottom: '12px'
+            marginBottom: '14px'
           }}>
             <span>🌾</span>
             <span>
@@ -121,18 +151,18 @@ function App() {
             fontSize: '2.5rem',
             fontWeight: 800,
             letterSpacing: '-0.03em',
-            color: '#fff',
+            color: 'var(--text-title)',
             marginBottom: '12px',
             lineHeight: 1.2
           }}>
             {isMr ? (
-              <>शेतमाल आज विकावा की <span style={{ color: '#34d399' }}>राखून ठेवावा?</span></>
+              <>शेतमाल आज विकावा की <span style={{ color: 'var(--text-emerald)' }}>राखून ठेवावा?</span></>
             ) : (
-              <>Sell Today or <span style={{ color: '#34d399' }}>Hold for Better Rates?</span></>
+              <>Sell Today or <span style={{ color: 'var(--text-emerald)' }}>Hold for Better Rates?</span></>
             )}
           </h1>
 
-          <p style={{ fontSize: '1rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+          <p style={{ fontSize: '1.02rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
             {isMr
               ? 'थेट १ ते ५ दिवसांचे बाजारभाव अंदाज, नैसर्गिक घट, साठवणूक खर्च आणि ब्रेक-इव्हन विश्लेषणाचा अभ्यास करून शेतकऱ्यांना अचूक विक्री सल्ला.'
               : 'Our decision engine combines leak-free direct multi-step price forecasts, dynamic crop spoilage modeling, and holding break-even analysis to recommend optimal sale timing.'}
@@ -143,15 +173,15 @@ function App() {
         {error && (
           <div style={{
             maxWidth: '1000px',
-            margin: '0 auto 20px',
-            background: 'rgba(239, 68, 68, 0.15)',
-            border: '1px solid rgba(239, 68, 68, 0.4)',
+            margin: '0 auto 24px',
+            background: 'rgba(239, 68, 68, 0.12)',
+            border: '1px solid rgba(239, 68, 68, 0.35)',
             borderRadius: '12px',
             padding: '16px 20px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            color: '#fca5a5'
+            color: 'var(--text-red)'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span style={{ fontSize: '1.25rem' }}>⚠️</span>
@@ -162,14 +192,14 @@ function App() {
             <button
               onClick={() => handleForecastSubmit()}
               style={{
-                background: 'rgba(239, 68, 68, 0.3)',
-                border: '1px solid rgba(239, 68, 68, 0.6)',
-                color: '#fff',
+                background: 'rgba(239, 68, 68, 0.25)',
+                border: '1px solid rgba(239, 68, 68, 0.5)',
+                color: 'var(--text-red)',
                 borderRadius: '8px',
                 padding: '6px 14px',
                 fontSize: '0.8rem',
                 cursor: 'pointer',
-                fontWeight: 600
+                fontWeight: 700
               }}
             >
               {isMr ? 'पुन्हा प्रयत्न करा' : 'Retry'}
@@ -194,13 +224,14 @@ function App() {
               onSubmit={handleForecastSubmit}
               loading={loading}
               lang={lang}
+              theme={theme}
             />
           </div>
 
           {/* Results Column */}
           {result && (
             <div>
-              <PriceAdvisoryResult result={result} lang={lang} />
+              <PriceAdvisoryResult result={result} lang={lang} theme={theme} />
             </div>
           )}
         </div>
@@ -209,7 +240,8 @@ function App() {
       {/* Footer */}
       <footer style={{
         borderTop: '1px solid var(--border-subtle)',
-        background: 'rgba(10, 15, 24, 0.9)',
+        background: 'var(--bg-footer)',
+        backdropFilter: 'blur(10px)',
         padding: '20px 24px',
         textAlign: 'center',
         fontSize: '0.8rem',
@@ -217,7 +249,7 @@ function App() {
         marginTop: '40px'
       }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-          <span>🌱 <strong>Distress-Sale Timing Advisor</strong> — Decision Support System for Farmers</span>
+          <span style={{ color: 'var(--text-body)' }}>🌱 <strong>Distress-Sale Timing Advisor</strong> — Decision Support System for Farmers</span>
           <span>Kolhapur & Sangli APMC Mandis • Climatology & Multi-Step Machine Learning</span>
         </div>
       </footer>
