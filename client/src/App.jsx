@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import PriceQueryForm from './components/PriceQueryForm';
 import PriceAdvisoryResult from './components/PriceAdvisoryResult';
-import { fetchMarkets, fetchPriceForecast, fetchHealth } from './services/priceApi';
+import { fetchMarkets, fetchPriceForecast, evaluateTimingDecision, fetchHealth } from './services/priceApi';
 
 function App() {
   const [lang, setLang] = useState('en');
@@ -13,7 +13,9 @@ function App() {
     market: 'Kolhapur',
     district: 'Kolhapur',
     quantity_quintals: 50,
-    horizon_days: 7,
+    storage_type: 'ambient',
+    liquidity_need: 'normal',
+    horizon_days: 5,
   });
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -40,25 +42,43 @@ function App() {
     loadInitialData();
   }, []);
 
-  // Submit farmer query
+  // Submit farmer query to combined decision engine
   const handleForecastSubmit = async (e) => {
     if (e) e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      const data = await fetchPriceForecast({
-        commodity: formData.commodity,
+      // Primary: call combined economic decision engine (Price + Shelf-life + Storage + Liquidity)
+      const data = await evaluateTimingDecision({
+        commodity: formData.commodity.toLowerCase(),
         market: formData.market,
         district: formData.district,
-        quantity_quintals: Number(formData.quantity_quintals) || 0,
-        horizon_days: Number(formData.horizon_days) || 7,
+        quantityQuintals: Number(formData.quantity_quintals) || 50,
+        storageType: formData.storage_type || 'ambient',
+        liquidityNeed: formData.liquidity_need || 'normal',
       });
       setResult(data);
     } catch (err) {
-      console.error('Forecast request failed:', err);
-      const msg = err.response?.data?.error || err.message || 'Failed to connect to ML backend.';
-      setError(msg);
+      console.warn('Decision evaluate endpoint warning, trying direct price forecast fallback:', err.message);
+      try {
+        const fallbackData = await fetchPriceForecast({
+          commodity: formData.commodity,
+          market: formData.market,
+          district: formData.district,
+          quantity_quintals: Number(formData.quantity_quintals) || 50,
+          horizon_days: Math.min(Number(formData.horizon_days) || 5, 5),
+        });
+        setResult(fallbackData);
+      } catch (fallbackErr) {
+        console.error('Forecast request failed:', fallbackErr);
+        const msg =
+          fallbackErr.response?.data?.message ||
+          fallbackErr.response?.data?.error ||
+          fallbackErr.message ||
+          'Failed to connect to backend service.';
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -77,7 +97,7 @@ function App() {
 
       <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px', flex: 1, width: '100%' }}>
         {/* Hero Intro */}
-        <div style={{ textAlign: 'center', marginBottom: '28px', maxWidth: '800px', margin: '0 auto 28px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '28px', maxWidth: '820px', margin: '0 auto 28px' }}>
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -93,7 +113,7 @@ function App() {
           }}>
             <span>🌾</span>
             <span>
-              {isMr ? 'शेतकऱ्यांसाठी AI तंत्रज्ञान — अधिक नफा, अचूक विक्री वेळ' : 'Machine Learning Powered Mandi Price Intelligence'}
+              {isMr ? 'शेतकऱ्यांसाठी AI निर्णय सहाय्यक — तोटा टाळा, नफा वाढवा' : 'Distress-Sale Timing Advisor • Price & Spoilage Optimization'}
             </span>
           </div>
 
@@ -106,16 +126,16 @@ function App() {
             lineHeight: 1.2
           }}>
             {isMr ? (
-              <>शेतमालाला कधी मिळणार <span style={{ color: '#34d399' }}>सर्वोत्तम भाव?</span></>
+              <>शेतमाल आज विकावा की <span style={{ color: '#34d399' }}>राखून ठेवावा?</span></>
             ) : (
-              <>When Should You Sell for <span style={{ color: '#34d399' }}>Peak Price?</span></>
+              <>Sell Today or <span style={{ color: '#34d399' }}>Hold for Better Rates?</span></>
             )}
           </h1>
 
           <p style={{ fontSize: '1rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
             {isMr
-              ? 'आमचे XGBoost AI मॉडेल ४९ घटकांचा (मागील भाव, हवामान, तापमान, पाऊस, आवक) अभ्यास करून अचूक भाव अंदाज व विक्री सल्ला देते.'
-              : 'Our 49-feature XGBoost model factors in 14-day price lags, rolling volatility, temperature, and rainfall to tell farmers exactly when to sell and how much they will earn.'}
+              ? 'थेट १ ते ५ दिवसांचे बाजारभाव अंदाज, नैसर्गिक घट, साठवणूक खर्च आणि ब्रेक-इव्हन विश्लेषणाचा अभ्यास करून शेतकऱ्यांना अचूक विक्री सल्ला.'
+              : 'Our decision engine combines leak-free direct multi-step price forecasts, dynamic crop spoilage modeling, and holding break-even analysis to recommend optimal sale timing.'}
           </p>
         </div>
 
@@ -197,8 +217,8 @@ function App() {
         marginTop: '40px'
       }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-          <span>🌱 <strong>AgriSense</strong> — Decision Support System for Smart Agriculture</span>
-          <span>Kolhapur & Sangli APMC Markets • Weather & Price Fusion Engine</span>
+          <span>🌱 <strong>Distress-Sale Timing Advisor</strong> — Decision Support System for Farmers</span>
+          <span>Kolhapur & Sangli APMC Mandis • Climatology & Multi-Step Machine Learning</span>
         </div>
       </footer>
     </div>

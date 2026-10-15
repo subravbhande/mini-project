@@ -1,6 +1,3 @@
-const axios = require('axios');
-const { getPriceForecast: runPythonPriceForecast } = require('./mlService');
-
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
 
 const client = axios.create({
@@ -19,7 +16,7 @@ const mlClient = {
     } catch (err) {
       return {
         status: 'offline',
-        fallbackAvailable: true,
+        fallbackAvailable: false,
         error: err.code || err.message,
       };
     }
@@ -32,14 +29,13 @@ const mlClient = {
     } catch (err) {
       console.warn(`[ML Client] /series unavailable at ${ML_SERVICE_URL} (${err.code || err.message}). Using local fallback.`);
       return {
-        count: 7,
+        count: 6,
         supported_series: [
           { crop: 'tomato', crop_display: 'Tomato', market: 'Kolhapur', district: 'Kolhapur' },
           { crop: 'tomato', crop_display: 'Tomato', market: 'Vadgaonpeth', district: 'Kolhapur' },
           { crop: 'tomato', crop_display: 'Tomato', market: 'Islampur', district: 'Sangli' },
           { crop: 'onion', crop_display: 'Onion', market: 'Kolhapur', district: 'Kolhapur' },
           { crop: 'onion', crop_display: 'Onion', market: 'Vadgaonpeth', district: 'Kolhapur' },
-          { crop: 'onion', crop_display: 'Onion', market: 'Sangli', district: 'Sangli' },
           { crop: 'onion', crop_display: 'Onion', market: 'Sangli-Phale-Bhajipala', district: 'Sangli' },
         ],
       };
@@ -47,23 +43,8 @@ const mlClient = {
   },
 
   getPriceForecast: async (params) => {
-    try {
-      // 1. Try high-performance HTTP ML service
-      const res = await client.post('/price/forecast', params);
-      return res.data;
-    } catch (err) {
-      // 2. If HTTP microservice is unreachable, fall back to Python process
-      const isConnectionIssue = err.code === 'ECONNREFUSED' ||
-        err.code === 'ETIMEDOUT' ||
-        err.code === 'ENOTFOUND' ||
-        !err.response;
-
-      if (isConnectionIssue) {
-        console.warn(`[ML Client] HTTP microservice offline at ${ML_SERVICE_URL} (${err.code || err.message}). Seamlessly engaging Python fallback.`);
-        return await runPythonPriceForecast(params);
-      }
-      throw err;
-    }
+    const res = await client.post('/price/forecast', params);
+    return res.data;
   },
 
   simulateDecay: async (params) => {

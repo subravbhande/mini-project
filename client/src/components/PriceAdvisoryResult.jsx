@@ -7,66 +7,98 @@ export default function PriceAdvisoryResult({ result, lang }) {
 
   if (!result) return null;
 
-  const {
-    commodity,
-    market,
-    district,
-    forecast_start_date,
-    daily_forecasts = [],
-    _summary = {},
-    farmer_summary = {},
-  } = result;
+  // Unpack decision fields (from /api/decision/evaluate or ML /decide)
+  const isDecisionPayload = Boolean(result.decision);
+  const decision = result.decision || (result.farmer_summary?.recommendation === 'HOLD_FOR_BEST_PRICE' ? 'HOLD' : 'SELL');
+  const actByDate = result.act_by_date || result.farmer_summary?.best_sell_date || '';
+  const reasonText = isMr
+    ? (result.reason_mr || result.reason || '')
+    : (result.reason || result.reason_mr || '');
 
-  const {
-    best_sell_date,
-    best_sell_price,
-    price_trend,
-    recommendation,
-    estimated_earnings_best_day,
-    estimated_earnings_today,
-    quantity_quintals = 0,
-    weather_risk_days = [],
-  } = farmer_summary;
+  const nrvToday = result.nrv_today ?? (result.farmer_summary?.estimated_earnings_today || 0);
+  const nrvBest = result.nrv_best ?? (result.farmer_summary?.estimated_earnings_best_day || 0);
+  const upliftPct = result.uplift_pct ?? 0;
+  const confidenceLabel = result.confidence_label || 'Moderate';
+  const breakEvenPrice = result.break_even_price_best_day || 0;
+  const breakEvenPct = result.break_even_pct_best_day || 0;
 
-  const todayPrice = daily_forecasts[0]?.predicted_modal_price || 0;
-  const earningsDiff = (estimated_earnings_best_day || 0) - (estimated_earnings_today || 0);
+  // Data freshness
+  const isStale = Boolean(result.stale);
+  const dataAsOf = result.data_as_of || '';
+  const daysStale = result.days_stale || 0;
 
-  const formattedBestDate = best_sell_date
-    ? new Date(best_sell_date).toLocaleDateString(isMr ? 'mr-IN' : 'en-US', {
-        weekday: 'long',
+  // Unpack forecast data
+  const commodity = result.commodity || '';
+  const market = result.market || '';
+  const district = result.district || '';
+  const priceForecast = result.price_forecast || result;
+  const dailyForecasts = priceForecast.daily_forecasts || [];
+  const farmerSummary = priceForecast.farmer_summary || result.farmer_summary || {};
+
+  const bestSellPrice = farmerSummary.best_sell_price || dailyForecasts[0]?.predicted_modal_price || 0;
+  const todayPrice = dailyForecasts[0]?.predicted_modal_price || 0;
+
+  // Theme styling based on true decision
+  const isHold = decision === 'HOLD';
+  const isPartial = decision === 'PARTIAL_SELL';
+  const isSell = decision === 'SELL';
+
+  const badgeColor = isHold ? '#22c55e' : isPartial ? '#f59e0b' : '#ef4444';
+  const badgeBg = isHold
+    ? 'rgba(34, 197, 94, 0.15)'
+    : isPartial
+    ? 'rgba(245, 158, 11, 0.15)'
+    : 'rgba(239, 68, 68, 0.15)';
+  const badgeBorder = isHold
+    ? 'rgba(34, 197, 94, 0.4)'
+    : isPartial
+    ? 'rgba(245, 158, 11, 0.4)'
+    : 'rgba(239, 68, 68, 0.4)';
+
+  const formattedActBy = actByDate
+    ? new Date(actByDate).toLocaleDateString(isMr ? 'mr-IN' : 'en-US', {
+        weekday: 'short',
         day: 'numeric',
         month: 'short',
       })
     : '';
 
-  // Recommendation theme colors and text
-  const isHold = recommendation === 'HOLD_FOR_BEST_PRICE';
-  const isSellNow = recommendation === 'SELL_NOW';
-
-  const badgeColor = isHold ? '#22c55e' : isSellNow ? '#ef4444' : '#38bdf8';
-  const badgeBg = isHold
-    ? 'rgba(34, 197, 94, 0.15)'
-    : isSellNow
-    ? 'rgba(239, 68, 68, 0.15)'
-    : 'rgba(56, 189, 248, 0.15)';
-  const badgeBorder = isHold
-    ? 'rgba(34, 197, 94, 0.4)'
-    : isSellNow
-    ? 'rgba(239, 68, 68, 0.4)'
-    : 'rgba(56, 189, 248, 0.4)';
-
   return (
     <div className="glass-card" style={{ padding: '28px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      {/* Top Banner Recommendation */}
+      
+      {/* Staleness Warning Banner if data is aged (Bug 2 visibility) */}
+      {isStale && (
+        <div style={{
+          background: 'rgba(234, 179, 8, 0.12)',
+          border: '1px solid rgba(234, 179, 8, 0.35)',
+          borderRadius: '12px',
+          padding: '12px 18px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          fontSize: '0.85rem',
+          color: '#fef08a'
+        }}>
+          <span style={{ fontSize: '1.25rem' }}>⚠️</span>
+          <div>
+            <strong>{isMr ? 'बाजार माहिती सावधगिरी:' : 'Market Data Notice:'}</strong>{' '}
+            {isMr
+              ? `शेवटची अधिकृत मंडी नोंद ${dataAsOf} रोजीची आहे (${daysStale} दिवस जुनी). AI मॉडेलने अनिश्चितता पट्टा रुंद केला आहे.`
+              : `Latest official APMC report date is ${dataAsOf} (${daysStale} days old). Uncertainty bands have been widened accordingly.`}
+          </div>
+        </div>
+      )}
+
+      {/* Top Banner Decision */}
       <div
         style={{
           background: badgeBg,
           border: `1.5px solid ${badgeBorder}`,
           borderRadius: '16px',
-          padding: '22px',
+          padding: '24px',
           display: 'flex',
           alignItems: 'flex-start',
-          gap: '16px',
+          gap: '18px',
           boxShadow: isHold ? '0 0 30px rgba(34, 197, 94, 0.15)' : 'none',
         }}
       >
@@ -83,59 +115,93 @@ export default function PriceAdvisoryResult({ result, lang }) {
             flexShrink: 0,
           }}
         >
-          {isHold ? '⏳' : isSellNow ? '⚡' : '⚖️'}
+          {isHold ? '⏳' : isPartial ? '⚖️' : '⚡'}
         </div>
 
         <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '8px' }}>
             <span
               style={{
                 background: badgeColor,
                 color: '#fff',
-                fontSize: '0.75rem',
+                fontSize: '0.8rem',
                 fontWeight: 800,
-                padding: '3px 10px',
+                padding: '4px 12px',
                 borderRadius: '6px',
                 letterSpacing: '0.04em',
                 textTransform: 'uppercase',
               }}
             >
               {isHold
-                ? isMr ? 'सल्ला: शेतमाल राखून ठेवा' : 'ADVISORY: HOLD FOR PEAK'
-                : isSellNow
-                ? isMr ? 'सल्ला: आजच विक्री करा' : 'ADVISORY: SELL TODAY'
-                : isMr ? 'सल्ला: भाव स्थिर आहे' : 'ADVISORY: STABLE MARKET'}
+                ? isMr ? 'सल्ला: शेतमाल राखून ठेवा (HOLD)' : 'ADVISORY: HOLD PRODUCE'
+                : isPartial
+                ? isMr ? 'सल्ला: अर्धा विका / अर्धा ठेवा (PARTIAL-SELL)' : 'ADVISORY: PARTIAL-SELL (50%)'
+                : isMr ? 'सल्ला: आजच विक्री करा (SELL TODAY)' : 'ADVISORY: SELL TODAY'}
             </span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+
+            <span style={{
+              background: 'rgba(255, 255, 255, 0.08)',
+              padding: '3px 8px',
+              borderRadius: '6px',
+              fontSize: '0.78rem',
+              color: 'var(--text-muted)'
+            }}>
+              {isMr ? 'विश्वासार्हता:' : 'Confidence:'} <strong style={{ color: '#fff' }}>{confidenceLabel}</strong>
+            </span>
+
+            <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
               {commodity} • {market} ({district})
             </span>
           </div>
 
-          <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#fff', marginBottom: '6px' }}>
-            {isHold
-              ? isMr
-                ? `${formattedBestDate} पर्यंत थांबा — भाव ₹${Math.round(best_sell_price)}/क्विंटल पर्यंत पोहोचेल!`
-                : `Wait until ${formattedBestDate} — Peak rate of ₹${Math.round(best_sell_price)}/qtl expected!`
-              : isSellNow
-              ? isMr
-                ? `आजच विक्री करा (₹${Math.round(todayPrice)}/क्विंटल) — पुढील दिवसांत भाव घसरण्याची शक्यता.`
-                : `Sell today at ₹${Math.round(todayPrice)}/qtl — rates expected to soften downstream.`
-              : isMr
-                ? `भाव स्थिर राहणार आहे — आपल्या सोयीनुसार माल बाजारात न्या.`
-                : `Prices are projected to remain steady across the week.`}
+          <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#fff', marginBottom: '8px' }}>
+            {reasonText || (isSell ? (isMr ? 'आजच विक्री करणे फायदेशीर आहे.' : 'Selling today maximizes returns.') : '')}
           </h3>
 
-          {quantity_quintals > 0 && earningsDiff > 0 && (
-            <p style={{ fontSize: '0.92rem', color: 'var(--text-gold)', fontWeight: 600 }}>
-              💰 {isMr
-                ? `आज विकण्याऐवजी सर्वोत्तम दिवशी विकल्यास ${quantity_quintals} क्विंटलवर अतिरिक्त +₹${Math.round(earningsDiff).toLocaleString()} नफा मिळू शकतो!`
-                : `Holding until the peak day can earn you +₹${Math.round(earningsDiff).toLocaleString()} more on your ${quantity_quintals} quintals compared to selling today!`}
-            </p>
-          )}
+          <div style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>
+            📅 <strong>{isMr ? 'कारवाईची अंतिम तारीख (Act By):' : 'Act-By Date:'}</strong>{' '}
+            <span style={{ color: '#f8fafc', fontWeight: 700 }}>
+              {formattedActBy || actByDate || (isMr ? 'आजच' : 'Today')}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* 4 Stat Metric Cards */}
+      {/* Break-Even Insight Box (Solves the "Always SELL" question) */}
+      <div style={{
+        background: 'rgba(15, 23, 42, 0.65)',
+        border: '1px solid rgba(56, 189, 248, 0.25)',
+        borderRadius: '12px',
+        padding: '16px 20px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '14px',
+        fontSize: '0.88rem'
+      }}>
+        <span style={{ fontSize: '1.6rem' }}>🎯</span>
+        <div>
+          <div style={{ fontWeight: 700, color: '#38bdf8', marginBottom: '2px' }}>
+            {isMr ? 'ब्रेक-इव्हन विश्लेषण (Break-Even Requirement)' : 'Holding Break-Even Threshold'}
+          </div>
+          <div style={{ color: 'var(--text-muted)', lineHeight: '1.4' }}>
+            {isMr ? (
+              <>
+                साठवणुकीचा खर्च आणि नैसर्गिक घट भरून काढण्यासाठी बाजारभाव किमान{' '}
+                <strong style={{ color: '#fff' }}>+{Math.max(0, Math.round(breakEvenPct))}% (₹{Math.round(breakEvenPrice)}/क्विंटल)</strong>{' '}
+                वाढणे गरजेचे आहे. जर भावात इतकी वाढ शक्य नसेल तर आजच विकणे अधिक सुरक्षित ठरेल.
+              </>
+            ) : (
+              <>
+                To justify holding produce against storage fees and deterioration, mandi prices must rise by at least{' '}
+                <strong style={{ color: '#fff' }}>+{Math.max(0, Math.round(breakEvenPct))}% (₹{Math.round(breakEvenPrice)}/qtl)</strong>{' '}
+                to break even.
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 4 Financial Metric Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
         {/* Card 1: Today's Price */}
         <div style={{
@@ -145,37 +211,18 @@ export default function PriceAdvisoryResult({ result, lang }) {
           padding: '16px'
         }}>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>
-            {isMr ? 'आजचा अपेक्षित भाव' : "Today's Rate"}
+            {isMr ? 'आजचा मंडी भाव' : "Today's Mandi Rate"}
           </div>
           <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff' }}>
             ₹{Math.round(todayPrice).toLocaleString()}
             <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-muted)', marginLeft: '4px' }}>/ qtl</span>
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-            {forecast_start_date}
+            {dataAsOf ? `${isMr ? 'नोंद दिनांक:' : 'Data date:'} ${dataAsOf}` : ''}
           </div>
         </div>
 
-        {/* Card 2: Best Selling Rate */}
-        <div style={{
-          background: 'rgba(15, 23, 42, 0.7)',
-          border: '1px solid rgba(34, 197, 94, 0.3)',
-          borderRadius: '12px',
-          padding: '16px'
-        }}>
-          <div style={{ fontSize: '0.78rem', color: '#4ade80', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 600 }}>
-            ⭐ {isMr ? 'सर्वोत्तम भाव (Peak)' : 'Peak Rate & Date'}
-          </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#4ade80' }}>
-            ₹{Math.round(best_sell_price).toLocaleString()}
-            <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-muted)', marginLeft: '4px' }}>/ qtl</span>
-          </div>
-          <div style={{ fontSize: '0.75rem', color: '#fff', marginTop: '4px', fontWeight: 600 }}>
-            {formattedBestDate}
-          </div>
-        </div>
-
-        {/* Card 3: Total Estimated Earnings */}
+        {/* Card 2: Today's Net Realizable Value */}
         <div style={{
           background: 'rgba(15, 23, 42, 0.7)',
           border: '1px solid var(--border-subtle)',
@@ -183,17 +230,35 @@ export default function PriceAdvisoryResult({ result, lang }) {
           padding: '16px'
         }}>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>
-            {isMr ? 'एकूण अपेक्षित उत्पन्न' : 'Total Est. Revenue'}
+            {isMr ? 'आज विकल्यास निव्वळ रक्कम' : 'NRV Selling Today'}
           </div>
           <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#38bdf8' }}>
-            ₹{Math.round(estimated_earnings_best_day || (todayPrice * quantity_quintals)).toLocaleString()}
+            ₹{Math.round(nrvToday).toLocaleString()}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-            {quantity_quintals} {isMr ? 'क्विंटल' : 'quintals'} @ Peak Rate
+            {isMr ? 'सध्याची प्रत आणि घट लक्षात घेऊन' : 'Net of current quality & transport'}
           </div>
         </div>
 
-        {/* Card 4: Extra Gain Difference */}
+        {/* Card 3: Best Projected Value */}
+        <div style={{
+          background: 'rgba(15, 23, 42, 0.7)',
+          border: '1px solid rgba(34, 197, 94, 0.3)',
+          borderRadius: '12px',
+          padding: '16px'
+        }}>
+          <div style={{ fontSize: '0.78rem', color: '#4ade80', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 600 }}>
+            ⭐ {isMr ? 'सर्वोत्तम निव्वळ उत्पन्न' : 'Best Projected NRV'}
+          </div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#4ade80' }}>
+            ₹{Math.round(nrvBest).toLocaleString()}
+          </div>
+          <div style={{ fontSize: '0.75rem', color: '#fff', marginTop: '4px', fontWeight: 600 }}>
+            {formattedActBy || actByDate}
+          </div>
+        </div>
+
+        {/* Card 4: Net Uplift % */}
         <div style={{
           background: 'rgba(15, 23, 42, 0.7)',
           border: '1px solid rgba(245, 158, 11, 0.3)',
@@ -201,74 +266,39 @@ export default function PriceAdvisoryResult({ result, lang }) {
           padding: '16px'
         }}>
           <div style={{ fontSize: '0.78rem', color: '#fbbf24', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 600 }}>
-            📈 {isMr ? 'थांबल्यास अतिरिक्त फायदा' : 'Timing Advantage'}
+            📈 {isMr ? 'अपेक्षित निव्वळ नफा/तोटा' : 'Net Economic Uplift'}
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fbbf24' }}>
-            {earningsDiff >= 0 ? `+₹${Math.round(earningsDiff).toLocaleString()}` : `₹0`}
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: upliftPct > 0 ? '#4ade80' : '#f87171' }}>
+            {upliftPct > 0 ? `+${upliftPct}%` : `${upliftPct}%`}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-            {earningsDiff > 0
-              ? (isMr ? 'सर्वोत्तम दिवशी विकल्यास फायदा' : 'vs selling immediately today')
-              : (isMr ? 'आजच सर्वोत्तम भाव आहे' : 'Peak is today')}
+            {upliftPct > 0
+              ? (isMr ? 'थांबल्यास अतिरिक्त फायदा' : 'holding advantage')
+              : (isMr ? 'आजच विकणे श्रेयस्कर' : 'selling today optimal')}
           </div>
         </div>
       </div>
-
-      {/* Weather Risk Notice */}
-      {weather_risk_days && weather_risk_days.length > 0 && (
-        <div style={{
-          background: 'rgba(239, 68, 68, 0.1)',
-          border: '1px solid rgba(239, 68, 68, 0.3)',
-          borderRadius: '12px',
-          padding: '14px 18px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
-          <span style={{ fontSize: '1.5rem' }}>🌧️</span>
-          <div>
-            <div style={{ fontWeight: 700, color: '#f87171', fontSize: '0.9rem' }}>
-              {isMr ? 'हवामान इशारा (Weather Alert): पाऊस शक्यता' : 'Weather Risk Notice: Rain Projected'}
-            </div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              {isMr
-                ? `तारीख: ${weather_risk_days.join(', ')} रोजी पाऊस पडण्याची शक्यता आहे. माल वाहतुकीसाठी बंदिस्त वाहने वापरा किंवा शेतमाल कोरड्या जागी सुरक्षित ठेवा.`
-                : `Rain projected on: ${weather_risk_days.join(', ')}. Use waterproof tarpaulins for transport or ensure safe covered storage.`}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Forecast Trend Chart */}
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <div>
             <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>
-              📊 {isMr ? '७ ते १४ दिवसांचा भाव आलेख' : 'Price Trend Forecast Chart'}
+              📊 {isMr ? '१ ते ५ दिवसांचा भाव अंदाज व अनिश्चितता पट्टा' : '1 to 5 Day Price Forecast & Uncertainty Bands'}
             </h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
               {isMr
-                ? 'हिरवी रेषा: AI अंदाज भाव • निळा पट्टा: संभाव्य चढ-उतार मर्यादा'
-                : 'Green line: Predicted modal price • Blue shade: Expected min-max fluctuation range'}
+                ? 'हिरवी रेषा: AI अंदाज भाव • शेडेड पट्टा: empirical residual uncertainty band'
+                : 'Green line: Model forecast • Shaded band: Empirical residual error band'}
             </p>
-          </div>
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: '8px',
-            padding: '4px 10px',
-            fontSize: '0.78rem',
-            color: 'var(--text-muted)'
-          }}>
-            {price_trend === 'UP' ? '📈 ट्रेंड: वाढता (RISING)' : price_trend === 'DOWN' ? '📉 ट्रेंड: घसरता (FALLING)' : '➡️ ट्रेंड: स्थिर (STABLE)'}
           </div>
         </div>
 
-        <PriceChart dailyForecasts={daily_forecasts} bestSellDate={best_sell_date} lang={lang} />
+        <PriceChart dailyForecasts={dailyForecasts} bestSellDate={actByDate} lang={lang} />
       </div>
 
       {/* Day by Day Details Table */}
-      <DayForecastTable dailyForecasts={daily_forecasts} bestSellDate={best_sell_date} lang={lang} />
+      <DayForecastTable dailyForecasts={dailyForecasts} bestSellDate={actByDate} lang={lang} />
 
       {/* Model Tech Badge Footer */}
       <div style={{
@@ -283,10 +313,10 @@ export default function PriceAdvisoryResult({ result, lang }) {
         color: 'var(--text-muted)'
       }}>
         <div>
-          <span>⚙️ AgriSense XGBoost Regressor • 49 Engineered Features (Lags, Rollings, Weather, Lags)</span>
+          <span>⚙️ Distress-Sale Timing Advisor • Direct Multi-Step Horizon Model & Dynamic Shelf-Life Simulation</span>
         </div>
         <div>
-          <span>APMC: <strong>{market}</strong> ({district}) • Horizon: <strong>{daily_forecasts.length} Days</strong></span>
+          <span>APMC: <strong>{market}</strong> ({district}) • Horizon: <strong>{dailyForecasts.length} Days</strong></span>
         </div>
       </div>
     </div>

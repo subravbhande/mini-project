@@ -1,10 +1,21 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('FATAL: JWT_SECRET environment variable is not configured.');
+    }
+    return 'distress_sale_dev_jwt_secret_only';
+  }
+  return secret;
+};
+
 const generateToken = (user) => {
   return jwt.sign(
     { id: user._id, phone: user.phone, district: user.district },
-    process.env.JWT_SECRET || 'fallback_secret',
+    getJwtSecret(),
     { expiresIn: '30d' }
   );
 };

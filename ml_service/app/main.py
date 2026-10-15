@@ -155,10 +155,11 @@ def forecast_price(req: PriceForecastRequest):
             for d in daily:
                 d["predicted_min_price"] = d.get("typical_daily_spread_min") or d.get("confidence_band_low") or round(d["predicted_modal_price"] * 0.95, 2)
                 d["predicted_max_price"] = d.get("typical_daily_spread_max") or d.get("confidence_band_high") or round(d["predicted_modal_price"] * 1.05, 2)
-                if "weather" not in d:
+                if "weather" not in d or not d["weather"].get("temp_max_c"):
                     d["weather"] = {
-                        "temp_max_c": 31,
-                        "precipitation_mm": 25 if d.get("weather_risk_flag") else 0,
+                        "temp_max_c": d.get("temp_c", 25.0),
+                        "precipitation_mm": d.get("precipitation_mm", 0.0),
+                        "humidity_pct": d.get("humidity_pct", 70.0),
                     }
 
             best_day = max(daily, key=lambda d: d["predicted_modal_price"])
@@ -269,6 +270,10 @@ def get_timing_decision(req: DecisionRequest):
         storage_meta = decay_model.storage_types.get(decay_res.storage_type, {})
         storage_cost_rate = float(storage_meta.get("cost_per_quintal_per_day", 0.0))
 
+        effective_query_date = str(req.as_of or date.today())[:10]
+        decay_summary = decay_dict.get("summary", {})
+        eff_mult_today = float(decay_summary.get("effective_value_multiplier_today", 1.0))
+
         # 4. Economic Optimization
         economic_res = evaluate_decision(
             price_forecast_schedule=price_dict["daily_forecasts"],
@@ -277,7 +282,8 @@ def get_timing_decision(req: DecisionRequest):
             storage_cost_per_quintal_per_day=storage_cost_rate,
             liquidity_need=req.liquidity_need,
             base_price_today=price_dict["summary"]["last_observed_price"],
-            as_of_date=price_res.data_as_of,
+            as_of_date=effective_query_date,
+            current_value_multiplier_today=eff_mult_today,
         )
 
         return {
@@ -292,6 +298,8 @@ def get_timing_decision(req: DecisionRequest):
             "nrv_best": economic_res.nrv_best,
             "uplift_pct": economic_res.uplift_pct,
             "confidence_label": economic_res.confidence_label,
+            "break_even_price_best_day": economic_res.break_even_price_best_day,
+            "break_even_pct_best_day": economic_res.break_even_pct_best_day,
             "reason": economic_res.reason,
             "reason_mr": economic_res.reason_mr,
             "data_as_of": price_res.data_as_of,

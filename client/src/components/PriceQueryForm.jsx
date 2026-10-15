@@ -10,31 +10,36 @@ export default function PriceQueryForm({
 }) {
   const isMr = lang === 'mr';
 
+  const defaultMarkets = {
+    Tomato: [
+      { market: 'Kolhapur', district: 'Kolhapur' },
+      { market: 'Vadgaonpeth', district: 'Kolhapur' },
+      { market: 'Islampur', district: 'Sangli' },
+    ],
+    Onion: [
+      { market: 'Kolhapur', district: 'Kolhapur' },
+      { market: 'Vadgaonpeth', district: 'Kolhapur' },
+      { market: 'Sangli-Phale-Bhajipala', district: 'Sangli' },
+    ],
+  };
+
   const availableMarkets =
     marketsData?.markets?.[formData.commodity] ||
-    (formData.commodity === 'Tomato'
-      ? [
-          { market: 'Kolhapur', district: 'Kolhapur' },
-          { market: 'Islampur', district: 'Sangli' },
-          { market: 'Vadgaonpeth', district: 'Kolhapur' },
-        ]
-      : [
-          { market: 'Sangli', district: 'Sangli' },
-          { market: 'Kolhapur', district: 'Kolhapur' },
-          { market: 'Vadgaonpeth', district: 'Kolhapur' },
-          { market: 'Sangli-Phale-Bhajipala', district: 'Sangli' },
-        ]);
+    defaultMarkets[formData.commodity] ||
+    defaultMarkets.Tomato;
 
   const handleCommoditySelect = (crop) => {
-    const newMarkets = marketsData?.markets?.[crop] || (crop === 'Tomato' 
-      ? [{ market: 'Kolhapur', district: 'Kolhapur' }]
-      : [{ market: 'Sangli', district: 'Sangli' }]);
+    const newMarkets = marketsData?.markets?.[crop] || defaultMarkets[crop] || defaultMarkets.Tomato;
     
+    // Choose appropriate default storage for crop
+    const defaultStorage = crop === 'Onion' ? 'ventilated_chawl' : 'ambient';
+
     setFormData((prev) => ({
       ...prev,
       commodity: crop,
       market: newMarkets[0]?.market || '',
       district: newMarkets[0]?.district || '',
+      storage_type: defaultStorage,
     }));
   };
 
@@ -57,14 +62,29 @@ export default function PriceQueryForm({
   };
 
   const loadPreset = (crop, mkt, dist, qty) => {
-    setFormData({
+    setFormData((prev) => ({
+      ...prev,
       commodity: crop,
       market: mkt,
       district: dist,
       quantity_quintals: qty,
-      horizon_days: 7,
-    });
+      horizon_days: 5,
+      storage_type: crop === 'Onion' ? 'ventilated_chawl' : 'ambient',
+      liquidity_need: 'normal',
+    }));
   };
+
+  const cropStorageOptions = formData.commodity === 'Onion'
+    ? [
+        { id: 'ambient', name: isMr ? 'खुली साठवण (Ambient)' : 'Ambient' },
+        { id: 'ventilated_chawl', name: isMr ? 'कांदा चाळ (Chawl)' : 'Ventilated Chawl' },
+        { id: 'cold_storage', name: isMr ? 'कोल्ड स्टोरेज (Cold)' : 'Cold Storage' },
+      ]
+    : [
+        { id: 'ambient', name: isMr ? 'खुली साठवण (Ambient)' : 'Ambient' },
+        { id: 'zecc', name: isMr ? 'शून्य ऊर्जा कक्ष (ZECC)' : 'ZECC Cooler' },
+        { id: 'cold_storage', name: isMr ? 'कोल्ड स्टोरेज (Cold)' : 'Cold Storage' },
+      ];
 
   return (
     <div className="glass-card" style={{ padding: '24px', position: 'relative' }}>
@@ -75,17 +95,17 @@ export default function PriceQueryForm({
         </h2>
         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
           {isMr
-            ? 'आपले पीक, बाजार समिती आणि प्रमाण निवडा — AI मॉडेल पुढील ७ ते १४ दिवसांचे भाव सांगेल.'
-            : 'Select your crop, target mandi, and harvest volume to generate AI price predictions.'}
+            ? 'आपले पीक, बाजार समिती, साठवणूक व प्रमाण निवडा — AI मॉडेल पुढील १ ते ५ दिवसांचा अचूक सल्ला देईल.'
+            : 'Select your crop, mandi, storage type, and volume to get AI timing advisory.'}
         </p>
       </div>
 
-      <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
         {/* Step 1: Crop Selection */}
         <div>
           <label style={{
             display: 'block',
-            fontSize: '0.85rem',
+            fontSize: '0.82rem',
             fontWeight: 600,
             color: 'var(--text-muted)',
             marginBottom: '8px',
@@ -100,41 +120,25 @@ export default function PriceQueryForm({
               type="button"
               onClick={() => handleCommoditySelect('Tomato')}
               style={{
-                background: formData.commodity === 'Tomato' 
-                  ? 'rgba(239, 68, 68, 0.15)' 
-                  : 'rgba(15, 23, 42, 0.6)',
-                border: formData.commodity === 'Tomato' 
-                  ? '2px solid var(--accent-red)' 
-                  : '1px solid var(--border-subtle)',
+                background: formData.commodity === 'Tomato' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(15, 23, 42, 0.6)',
+                border: formData.commodity === 'Tomato' ? '2px solid #ef4444' : '1px solid var(--border-subtle)',
                 borderRadius: '12px',
-                padding: '16px',
-                cursor: 'pointer',
+                padding: '12px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '14px',
+                gap: '10px',
+                cursor: 'pointer',
                 textAlign: 'left',
                 transition: 'all 0.2s',
-                boxShadow: formData.commodity === 'Tomato' ? '0 0 20px rgba(239, 68, 68, 0.2)' : 'none'
               }}
             >
-              <div style={{
-                fontSize: '2rem',
-                width: '46px',
-                height: '46px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'rgba(239, 68, 68, 0.15)',
-                borderRadius: '10px'
-              }}>
-                🍅
-              </div>
+              <span style={{ fontSize: '1.8rem' }}>🍅</span>
               <div>
-                <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#fff' }}>
-                  {isMr ? 'टोमॅटो (Tomato)' : 'Tomato'}
+                <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem' }}>
+                  {isMr ? 'टोमॅटो' : 'Tomato'}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  {isMr ? 'कोल्हापूर, इस्लामपूर, वडगावपेठ' : 'Kolhapur, Islampur, Vadgaonpeth'}
+                  {isMr ? 'नाशवंत पीक (३-५ दिवस)' : 'Perishable (3-5 days)'}
                 </div>
               </div>
             </button>
@@ -144,95 +148,71 @@ export default function PriceQueryForm({
               type="button"
               onClick={() => handleCommoditySelect('Onion')}
               style={{
-                background: formData.commodity === 'Onion' 
-                  ? 'rgba(139, 92, 246, 0.15)' 
-                  : 'rgba(15, 23, 42, 0.6)',
-                border: formData.commodity === 'Onion' 
-                  ? '2px solid var(--accent-purple)' 
-                  : '1px solid var(--border-subtle)',
+                background: formData.commodity === 'Onion' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(15, 23, 42, 0.6)',
+                border: formData.commodity === 'Onion' ? '2px solid #f59e0b' : '1px solid var(--border-subtle)',
                 borderRadius: '12px',
-                padding: '16px',
-                cursor: 'pointer',
+                padding: '12px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '14px',
+                gap: '10px',
+                cursor: 'pointer',
                 textAlign: 'left',
                 transition: 'all 0.2s',
-                boxShadow: formData.commodity === 'Onion' ? '0 0 20px rgba(139, 92, 246, 0.2)' : 'none'
               }}
             >
-              <div style={{
-                fontSize: '2rem',
-                width: '46px',
-                height: '46px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'rgba(139, 92, 246, 0.15)',
-                borderRadius: '10px'
-              }}>
-                🧅
-              </div>
+              <span style={{ fontSize: '1.8rem' }}>🧅</span>
               <div>
-                <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#fff' }}>
-                  {isMr ? 'कांदा (Onion)' : 'Onion'}
+                <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem' }}>
+                  {isMr ? 'कांदा' : 'Onion'}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  {isMr ? 'सांगली, कोल्हापूर, वडगावपेठ' : 'Sangli, Kolhapur, Vadgaonpeth'}
+                  {isMr ? 'साठवणूकक्षम पीक' : 'Storable Produce'}
                 </div>
               </div>
             </button>
           </div>
         </div>
 
-        {/* Step 2: Target Market Mandi */}
+        {/* Step 2: Mandi Selection */}
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <label style={{
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              color: 'var(--text-muted)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
-            }}>
-              2. {isMr ? 'बाजार समिती (Target Mandi)' : 'Target Mandi / APMC Market'}
-            </label>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-emerald)', fontWeight: 600 }}>
-              {isMr ? `जिल्हा: ${formData.district}` : `District: ${formData.district}`}
-            </span>
-          </div>
-
+          <label style={{
+            display: 'block',
+            fontSize: '0.82rem',
+            fontWeight: 600,
+            color: 'var(--text-muted)',
+            marginBottom: '8px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}>
+            2. {isMr ? 'बाजार समिती (APMC Mandi)' : 'Target APMC Mandi'}
+          </label>
           <select
             value={formData.market}
             onChange={handleMarketChange}
             className="input-base"
-            style={{ fontSize: '1rem', cursor: 'pointer' }}
+            style={{ width: '100%', fontSize: '0.95rem', fontWeight: 600 }}
           >
             {availableMarkets.map((m) => (
-              <option key={m.market} value={m.market} style={{ background: '#0f172a', color: '#fff' }}>
+              <option key={m.market} value={m.market}>
                 {m.market} ({m.district})
               </option>
             ))}
           </select>
         </div>
 
-        {/* Step 3: Harvest Quantity */}
+        {/* Step 3: Quantity */}
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <label style={{
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              color: 'var(--text-muted)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
-            }}>
-              3. {isMr ? 'उत्पादन प्रमाण (Harvest Quantity)' : 'Harvest Volume'}
-            </label>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-gold)', fontWeight: 600 }}>
-              {formData.quantity_quintals} Quintals = {(Number(formData.quantity_quintals) * 100).toLocaleString()} kg
-            </span>
-          </div>
-
+          <label style={{
+            display: 'block',
+            fontSize: '0.82rem',
+            fontWeight: 600,
+            color: 'var(--text-muted)',
+            marginBottom: '8px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}>
+            3. {isMr ? 'शेतमाल प्रमाण (Quantity in Quintals)' : 'Harvest Quantity (Quintals)'}
+          </label>
           <div style={{ display: 'flex', gap: '8px' }}>
             <input
               type="number"
@@ -259,7 +239,6 @@ export default function PriceQueryForm({
             </span>
           </div>
 
-          {/* Quick buttons */}
           <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
             {[10, 25, 50, 100].map((amt) => (
               <button
@@ -274,10 +253,7 @@ export default function PriceQueryForm({
                   padding: '4px 10px',
                   fontSize: '0.75rem',
                   cursor: 'pointer',
-                  transition: 'all 0.15s'
                 }}
-                onMouseOver={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.25)')}
-                onMouseOut={(e) => (e.target.style.borderColor = 'var(--border-subtle)')}
               >
                 +{amt} qtl
               </button>
@@ -285,51 +261,103 @@ export default function PriceQueryForm({
           </div>
         </div>
 
-        {/* Step 4: Forecast Horizon */}
+        {/* Step 4: Storage Type & Liquidity Need */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div>
+            <label style={{
+              display: 'block',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              color: 'var(--text-muted)',
+              marginBottom: '6px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              4. {isMr ? 'साठवणूक पद्धत' : 'Storage'}
+            </label>
+            <select
+              value={formData.storage_type || (formData.commodity === 'Onion' ? 'ventilated_chawl' : 'ambient')}
+              onChange={(e) => setFormData((prev) => ({ ...prev, storage_type: e.target.value }))}
+              className="input-base"
+              style={{ width: '100%', fontSize: '0.85rem' }}
+            >
+              {cropStorageOptions.map((st) => (
+                <option key={st.id} value={st.id}>
+                  {st.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={{
+              display: 'block',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              color: 'var(--text-muted)',
+              marginBottom: '6px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              5. {isMr ? 'पैशांची गरज' : 'Cash Need'}
+            </label>
+            <select
+              value={formData.liquidity_need || 'normal'}
+              onChange={(e) => setFormData((prev) => ({ ...prev, liquidity_need: e.target.value }))}
+              className="input-base"
+              style={{ width: '100%', fontSize: '0.85rem' }}
+            >
+              <option value="normal">{isMr ? 'सामान्य (Normal)' : 'Normal'}</option>
+              <option value="immediate">{isMr ? 'तातडीची गरज (Urgent)' : 'Urgent Cash'}</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Step 5: Forecast Horizon */}
         <div>
           <label style={{
             display: 'block',
-            fontSize: '0.85rem',
+            fontSize: '0.82rem',
             fontWeight: 600,
             color: 'var(--text-muted)',
             marginBottom: '8px',
             textTransform: 'uppercase',
             letterSpacing: '0.05em'
           }}>
-            4. {isMr ? 'अंदाज कालावधी (Forecast Horizon)' : 'Forecast Horizon'}
+            6. {isMr ? 'अंदाज कालावधी (Forecast Horizon)' : 'Forecast Horizon'}
           </label>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <button
               type="button"
-              onClick={() => setFormData((prev) => ({ ...prev, horizon_days: 7 }))}
+              onClick={() => setFormData((prev) => ({ ...prev, horizon_days: 3 }))}
               style={{
-                background: formData.horizon_days === 7 ? 'rgba(34, 197, 94, 0.15)' : 'rgba(15, 23, 42, 0.6)',
-                border: formData.horizon_days === 7 ? '1.5px solid var(--accent-green)' : '1px solid var(--border-subtle)',
+                background: formData.horizon_days === 3 ? 'rgba(34, 197, 94, 0.15)' : 'rgba(15, 23, 42, 0.6)',
+                border: formData.horizon_days === 3 ? '1.5px solid var(--accent-green)' : '1px solid var(--border-subtle)',
                 borderRadius: '8px',
                 padding: '10px',
-                color: formData.horizon_days === 7 ? '#fff' : 'var(--text-muted)',
+                color: formData.horizon_days === 3 ? '#fff' : 'var(--text-muted)',
                 fontWeight: 600,
                 fontSize: '0.85rem',
                 cursor: 'pointer'
               }}
             >
-              📅 {isMr ? '७ दिवस (शिफारस केलेले)' : '7 Days (Recommended)'}
+              📅 {isMr ? '३ दिवस (जलद अंदाज)' : '3 Days (Fast)'}
             </button>
             <button
               type="button"
-              onClick={() => setFormData((prev) => ({ ...prev, horizon_days: 14 }))}
+              onClick={() => setFormData((prev) => ({ ...prev, horizon_days: 5 }))}
               style={{
-                background: formData.horizon_days === 14 ? 'rgba(34, 197, 94, 0.15)' : 'rgba(15, 23, 42, 0.6)',
-                border: formData.horizon_days === 14 ? '1.5px solid var(--accent-green)' : '1px solid var(--border-subtle)',
+                background: formData.horizon_days === 5 ? 'rgba(34, 197, 94, 0.15)' : 'rgba(15, 23, 42, 0.6)',
+                border: formData.horizon_days === 5 ? '1.5px solid var(--accent-green)' : '1px solid var(--border-subtle)',
                 borderRadius: '8px',
                 padding: '10px',
-                color: formData.horizon_days === 14 ? '#fff' : 'var(--text-muted)',
+                color: formData.horizon_days === 5 ? '#fff' : 'var(--text-muted)',
                 fontWeight: 600,
                 fontSize: '0.85rem',
                 cursor: 'pointer'
               }}
             >
-              🗓️ {isMr ? '१४ दिवस (दीर्घ पल्ला)' : '14 Days (Extended)'}
+              🗓️ {isMr ? '५ दिवस (शिफारस केलेले)' : '5 Days (Recommended)'}
             </button>
           </div>
         </div>
@@ -344,12 +372,12 @@ export default function PriceQueryForm({
           {loading ? (
             <>
               <span className="loading-spinner" />
-              <span>{isMr ? 'AI मॉडेल विश्लेषण करत आहे...' : 'Running XGBoost Model...'}</span>
+              <span>{isMr ? 'AI विश्लेषण व निर्णय प्रक्रिया सुरू आहे...' : 'Evaluating Decision...'}</span>
             </>
           ) : (
             <>
               <span>⚡</span>
-              <span>{isMr ? 'भाव अंदाज व सल्ला मिळवा' : 'Generate Price Forecast & Advisory'}</span>
+              <span>{isMr ? 'विक्री वेळेचा AI सल्ला मिळवा' : 'Evaluate Sale Timing Advisory'}</span>
             </>
           )}
         </button>
@@ -364,7 +392,7 @@ export default function PriceQueryForm({
           fontSize: '0.78rem',
           color: 'var(--text-muted)'
         }}>
-          <span>{isMr ? 'नमुना चाचणी (Quick Test):' : 'Try Quick Presets:'}</span>
+          <span>{isMr ? 'नमुना चाचणी (Quick Presets):' : 'Try Quick Presets:'}</span>
           <div style={{ display: 'flex', gap: '8px' }}>
             <span
               onClick={() => loadPreset('Tomato', 'Kolhapur', 'Kolhapur', 50)}
@@ -374,7 +402,7 @@ export default function PriceQueryForm({
             </span>
             <span>•</span>
             <span
-              onClick={() => loadPreset('Onion', 'Sangli', 'Sangli', 100)}
+              onClick={() => loadPreset('Onion', 'Sangli-Phale-Bhajipala', 'Sangli', 100)}
               style={{ color: 'var(--text-gold)', cursor: 'pointer', textDecoration: 'underline' }}
             >
               Onion Sangli 100q

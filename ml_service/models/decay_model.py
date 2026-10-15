@@ -295,6 +295,17 @@ class DecayModel:
         is_override = storage_cfg.get("environment_override", False)
         mitigation = storage_cfg.get("mitigation_factor", 1.0) if not is_override else 1.0
 
+        # Initial quality & value multiplier as of today (t=0) accounting for elapsed crop age
+        quality_discount_today = (
+            self._get_quality_discount(crop_cfg, elapsed_age_days, mitigation)
+            if elapsed_age_days > 0 else 0.0
+        )
+        eff_value_mult_today = (current_weight / initial_quantity_quintals) * (1.0 - quality_discount_today)
+        initial_risk_today = self._determine_risk_level(
+            crop_key,
+            ((initial_quantity_quintals - current_weight) / initial_quantity_quintals) * 100.0,
+        )
+
         daily_steps: List[DailyDecayStep] = []
         safe_holding_days = target_horizon
         cutoff_day: Optional[int] = None
@@ -405,6 +416,10 @@ class DecayModel:
         final_step = daily_steps[-1]
         summary = {
             "initial_weight_quintals": round(initial_quantity_quintals, 2),
+            "current_weight_quintals_today": round(current_weight, 2),
+            "effective_value_multiplier_today": round(eff_value_mult_today, 4),
+            "quality_discount_pct_today": round(quality_discount_today * 100.0, 2),
+            "initial_risk_today": initial_risk_today,
             "final_sellable_weight_quintals": final_step.retained_weight_quintals,
             "total_physical_loss_pct": final_step.cumulative_weight_loss_pct,
             "final_quality_discount_pct": final_step.quality_discount_pct,

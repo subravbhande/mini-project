@@ -78,7 +78,6 @@ router.get("/markets", (req, res) => {
           { market: "Vadgaonpeth", district: "Kolhapur" },
         ],
         Onion: [
-          { market: "Sangli", district: "Sangli" },
           { market: "Kolhapur", district: "Kolhapur" },
           { market: "Vadgaonpeth", district: "Kolhapur" },
           { market: "Sangli-Phale-Bhajipala", district: "Sangli" },

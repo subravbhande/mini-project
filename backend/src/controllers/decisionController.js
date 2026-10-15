@@ -105,6 +105,17 @@ exports.getSupportedSeries = async (req, res) => {
 exports.logOutcome = async (req, res) => {
   try {
     const { batchId, actualSaleDate, actualPrice, actualQuantitySold, actualRevenue, userNotes } = req.body;
+
+    if (!batchId) {
+      return res.status(400).json({ success: false, message: 'batchId is required.' });
+    }
+
+    // Ownership check (Bug 7 fix): verify batch exists and belongs to authenticated user
+    const batch = await CropBatch.findOne({ _id: batchId, userId: req.user.id });
+    if (!batch) {
+      return res.status(404).json({ success: false, message: 'Batch not found or not owned by user.' });
+    }
+
     const outcome = await Outcome.create({
       batchId,
       userId: req.user.id,
@@ -115,7 +126,8 @@ exports.logOutcome = async (req, res) => {
       userNotes,
     });
 
-    await CropBatch.findByIdAndUpdate(batchId, { status: 'sold' });
+    batch.status = 'sold';
+    await batch.save();
 
     res.status(201).json({ success: true, data: outcome });
   } catch (err) {
