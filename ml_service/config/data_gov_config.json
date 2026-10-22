@@ -1,0 +1,26 @@
+{
+  "api_endpoint": "https://api.data.gov.in/resource",
+  "resource_id": "35985678-0d79-46b4-9ed6-6f13308a1d24",
+  "default_api_key": "579b464db66ec23bdd00000169d59438fbac4dfa5ed6b68cdca20c8f",
+  "target_state": "Maharashtra",
+  "target_districts": ["Kolhapur", "Sangli"],
+  "target_commodities": ["Tomato", "Onion"],
+  "target_markets": [
+    "Kolhapur",
+    "Vadgaonpeth",
+    "Islampur",
+    "Sangli-Phale-Bhajipala"
+  ],
+  "request_timeout_seconds": 45,
+  "max_retries": 3,
+  "retry_delay_seconds": 5,
+  "records_limit": 500,
+  "cron_schedule": "0 6 * * *",
+  "paths": {
+    "raw_dir": "data/raw",
+    "clean_price_csv": "data/processed/price_history_clean.csv",
+    "filtered_price_csv": "data/processed/price_history_filtered.csv",
+    "market_aliases": "config/market_aliases.json",
+    "data_as_of": "models/saved/data_as_of.json"
+  }
+}

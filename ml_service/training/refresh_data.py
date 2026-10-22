@@ -49,6 +49,8 @@ def main():
 
     # Phase 1 chain
     run_py("clean_price_data.py")
+    run_py("fetch_daily_prices.py")
+    run_py("fetch_daily_weather.py")
     run_py("clean_weather_data.py")
     run_py("coverage_report.py")
     run_py("filter_series.py")

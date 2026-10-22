@@ -4,14 +4,22 @@ __pycache__/
 *.pyc
 .env
 **/.env
-models/saved/*.pkl
-models/saved/*.json
-!models/saved/supported_series.json
-!models/saved/residual_quantiles.json
-!models/saved/backtest_report.json
+
+# Model artifacts
+**/models/saved/*.pkl
+**/models/saved/*.json
+!**/models/saved/supported_series.json
+!**/models/saved/residual_quantiles.json
+!**/models/saved/backtest_report.json
+!**/models/saved/data_as_of.json
+!**/models/saved/feedback_calibration.json
+
+# Runtime cache and ephemeral logs
+**/live_weather_cache.json
+**/prediction_logs.json
+**/feedback_evaluations.json
 
 data/raw/
-data/processed/
 artifacts/*.pkl
 .DS_Store
 dist/

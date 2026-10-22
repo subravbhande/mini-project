@@ -129,7 +129,32 @@ exports.logOutcome = async (req, res) => {
     batch.status = 'sold';
     await batch.save();
 
-    res.status(201).json({ success: true, data: outcome });
+    // Correlate with previous Decision to calculate realized farmer uplift for feedback loop
+    let feedbackMeta = null;
+    try {
+      const latestDecision = await Decision.findOne({ batchId }).sort({ createdAt: -1 });
+      if (latestDecision) {
+        const qty = actualQuantitySold || batch.quantityQuintals || 1;
+        const baselineRevenue = (latestDecision.nrvToday || 0) * qty;
+        const realizedRev = actualRevenue || (actualPrice * qty);
+        const upliftEarned = realizedRev - baselineRevenue;
+        
+        feedbackMeta = {
+          decisionId: latestDecision._id,
+          recommendedAction: latestDecision.decision,
+          recommendedHoldingDays: latestDecision.recommendedHoldingDays,
+          recommendedUpliftPct: latestDecision.upliftPct,
+          baselineDay0Revenue: Math.round(baselineRevenue * 100) / 100,
+          realizedRevenue: Math.round(realizedRev * 100) / 100,
+          realizedUpliftAmount: Math.round(upliftEarned * 100) / 100,
+          adviceProfitable: upliftEarned >= 0,
+        };
+      }
+    } catch (fErr) {
+      console.warn('[DecisionController] Outcome feedback correlation non-fatal:', fErr.message);
+    }
+
+    res.status(201).json({ success: true, data: outcome, feedback: feedbackMeta });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

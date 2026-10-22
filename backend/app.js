@@ -10,13 +10,18 @@ const authRoutes = require("./src/routes/authRoutes");
 const batchRoutes = require("./src/routes/batchRoutes");
 const decisionRoutes = require("./src/routes/decisionRoutes");
 const priceRoutes = require("./src/routes/priceRoutes");
+const feedbackRoutes = require("./src/routes/feedbackRoutes");
 const mlClient = require("./src/services/mlClient");
+const { initDailyPriceSyncJob } = require("./src/jobs/dailyPriceSyncJob");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Initialize Database connection
 connectDB();
+
+// Initialize automated daily price sync job
+initDailyPriceSyncJob();
 
 // 1. Security HTTP Headers
 app.use(
@@ -85,6 +90,7 @@ app.use("/api", apiLimiter);
 app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/price", mlLimiter, priceRoutes);
 app.use("/api/decision", mlLimiter, decisionRoutes);
+app.use("/api/feedback", mlLimiter, feedbackRoutes);
 app.use("/api/batches", batchRoutes);
 
 // 6. Deep System Health Check (Database + ML Service + Backend)

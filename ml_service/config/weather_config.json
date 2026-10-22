@@ -1,0 +1,26 @@
+{
+  "api_endpoint": "https://api.openweathermap.org/data/2.5",
+  "default_api_key": "71b1c519aa7a9dc576127852864819cd",
+  "key_name": "mini project api key",
+  "units": "metric",
+  "timeout_seconds": 15,
+  "max_retries": 3,
+  "districts": {
+    "Kolhapur": {
+      "name": "Kolhapur",
+      "query": "Kolhapur,IN",
+      "lat": 16.7050,
+      "lon": 74.2433
+    },
+    "Sangli": {
+      "name": "Sangli",
+      "query": "Sangli,IN",
+      "lat": 16.8524,
+      "lon": 74.5815
+    }
+  },
+  "paths": {
+    "weather_clean_csv": "data/processed/weather_history_clean.csv",
+    "weather_cache_json": "data/raw/weather/live_weather_cache.json"
+  }
+}

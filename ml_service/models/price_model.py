@@ -167,6 +167,46 @@ class PriceModel:
         except Exception as e:
             logger.error(f"Error preloading datasets: {e}")
 
+    def reload_prices(self) -> Dict[str, Any]:
+        """Reload the updated prices and weather datasets into memory after daily fetch."""
+        self.prices_df = load_prices()
+        try:
+            self.weather_df = load_weather()
+        except Exception as e:
+            logger.warning(f"Could not reload weather dataset: {e}")
+        latest_date = None
+        if self.prices_df is not None and not self.prices_df.empty:
+            latest_date = str(self.prices_df["date"].max().date())
+        today = date.today()
+        days_stale = 0
+        if latest_date:
+            days_stale = max(0, (today - datetime.strptime(latest_date, "%Y-%m-%d").date()).days)
+        logger.info(f"Reloaded prices and weather into memory. Latest date: {latest_date}, total price rows: {len(self.prices_df) if self.prices_df is not None else 0}")
+        return {
+            "status": "reloaded",
+            "latest_price_date": latest_date,
+            "total_records": len(self.prices_df) if self.prices_df is not None else 0,
+            "days_stale": days_stale,
+            "up_to_date": days_stale <= 1,
+        }
+
+    def get_data_status(self) -> Dict[str, Any]:
+        """Return dataset freshness and summary status."""
+        if self.prices_df is None or self.prices_df.empty:
+            self.prices_df = load_prices()
+        latest_date = str(self.prices_df["date"].max().date()) if self.prices_df is not None and not self.prices_df.empty else None
+        today = date.today()
+        days_stale = 0
+        if latest_date:
+            days_stale = max(0, (today - datetime.strptime(latest_date, "%Y-%m-%d").date()).days)
+        return {
+            "latest_price_date": latest_date,
+            "total_records": len(self.prices_df) if self.prices_df is not None else 0,
+            "days_stale": days_stale,
+            "stale": days_stale > 1,
+            "supported_series_count": len(self.supported_series),
+        }
+
     def canonicalize_input(self, crop: str, market: str, district: Optional[str] = None) -> Tuple[str, str, str]:
         c_clean = crop.strip().lower()
         m_raw = market.strip()
@@ -331,6 +371,13 @@ class PriceModel:
                 p_hat = round(p_last, 2)
                 model_used = "naive_persistence"
 
+            # Apply dynamic feedback loop calibration (rolling bias adjustment)
+            try:
+                from models.feedback_loop import apply_feedback_calibration
+                p_hat, _ = apply_feedback_calibration(crop, norm_market, p_hat)
+            except Exception:
+                pass
+
             # Uncertainty bands from empirical residual quantiles
             rq_key = f"{crop}_h{h}"
             rq = self.residual_quantiles.get(rq_key, {"q10": -0.15, "q90": 0.15})
@@ -403,6 +450,19 @@ class PriceModel:
             "overall_confidence": daily_forecasts[0].confidence_label,
             "is_stale_warning": is_stale,
         }
+
+        # Automatically log forecast into daily feedback loop
+        try:
+            from models.feedback_loop import log_forecast_prediction
+            log_forecast_prediction(
+                commodity=crop.capitalize(),
+                market=norm_market,
+                district=norm_dist,
+                forecast_start_date=str((as_of_ts + timedelta(days=1)).date()),
+                daily_forecasts=[f.to_dict() for f in daily_forecasts],
+            )
+        except Exception as log_err:
+            logger.debug(f"Feedback log notice: {log_err}")
 
         return PriceForecastResult(
             commodity=crop.capitalize(),

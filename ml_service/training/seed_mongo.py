@@ -29,7 +29,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 MONGO_URI = os.getenv("MONGO_URI")
-DB_NAME = "distress_sale_advisor"
+DB_NAME = os.getenv("MONGO_DB_NAME", "agrisense")
 
 PRICE_FILE = "data/processed/price_history_filtered.csv"
 WEATHER_FILE = "data/processed/weather_history_clean.csv"
@@ -111,7 +111,12 @@ def main():
         return
 
     client = MongoClient(MONGO_URI)
-    db = client[DB_NAME]
+    try:
+        db = client.get_default_database()
+        if db is None:
+            db = client[DB_NAME]
+    except Exception:
+        db = client[DB_NAME]
 
     print("=" * 60)
     print(f"Seeding database: {DB_NAME}")
