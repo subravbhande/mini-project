@@ -24,7 +24,6 @@ export default function DayForecastTable({ dailyForecasts, bestSellDate, lang, t
             <th style={{ padding: '8px 14px' }}>{isMr ? 'तारीख' : 'Date'}</th>
             <th style={{ padding: '8px 14px' }}>{isMr ? 'अपेक्षित भाव' : 'Predicted Price'}</th>
             <th style={{ padding: '8px 14px' }}>{isMr ? 'भाव मर्यादा' : 'Range (Min-Max)'}</th>
-            <th style={{ padding: '8px 14px' }}>{isMr ? 'हवामान' : 'Weather'}</th>
             <th style={{ padding: '8px 14px' }}>{isMr ? 'सल्ला' : 'Action'}</th>
           </tr>
         </thead>
@@ -91,26 +90,7 @@ export default function DayForecastTable({ dailyForecasts, bestSellDate, lang, t
                 </td>
 
                 {/* Weather */}
-                <td style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ color: 'var(--text-body)' }}>🌡️ {day.weather?.temp_max_c ? `${day.weather.temp_max_c}°C` : 'N/A'}</span>
-                    {day.weather_risk_flag ? (
-                      <span style={{
-                        background: 'rgba(239, 68, 68, 0.15)',
-                        color: 'var(--text-red)',
-                        fontSize: '0.7rem',
-                        fontWeight: 700,
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        border: '1px solid rgba(239, 68, 68, 0.3)'
-                      }}>
-                        🌧️ {isMr ? 'पाऊस धोका' : 'Rain Risk'}
-                      </span>
-                    ) : (
-                      <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>☀️</span>
-                    )}
-                  </div>
-                </td>
+
 
                 {/* Action / Badge */}
                 <td style={{

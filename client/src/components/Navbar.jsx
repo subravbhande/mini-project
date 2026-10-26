@@ -67,7 +67,7 @@ export default function Navbar({ lang, setLang, systemStatus, theme, toggleTheme
               <span style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-title)' }}>
                 AgriSense
               </span>
-              <span style={{
+              {/* <span style={{
                 background: 'rgba(16, 185, 129, 0.15)',
                 color: 'var(--text-emerald)',
                 fontSize: '0.7rem',
@@ -77,51 +77,27 @@ export default function Navbar({ lang, setLang, systemStatus, theme, toggleTheme
                 border: '1px solid rgba(16, 185, 129, 0.3)'
               }}>
                 ML ADVISORY
-              </span>
+              </span> */}
             </div>
             <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              {isMr 
-                ? 'कृत्रिम बुद्धिमत्ता बाजारभाव अंदाज व विक्री सल्लागार' 
-                : 'AI-Powered Mandi Price Forecast & Decision Advisory'}
+              {isMr
+                ? 'कृत्रिम बुद्धिमत्ता बाजारभाव अंदाज व विक्री सल्लागार'
+                : 'AI-Powered Market Price Forecast & Decision Advisory'}
             </p>
           </div>
         </div>
 
         {/* Right side controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          {/* Status Indicator */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: 'var(--bg-subtle)',
-            border: '1px solid var(--border-subtle)',
-            padding: '6px 14px',
-            borderRadius: '20px',
-            fontSize: '0.78rem',
-            color: 'var(--text-muted)',
-            transition: 'background 0.2s, border-color 0.2s',
-          }}
-          title={isDbConnected ? 'MongoDB: Connected' : 'MongoDB: Standalone mode'}>
-            <span style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              background: statusColor,
-              boxShadow: `0 0 10px ${statusColor}`
-            }} className="status-pulse" />
-            <span style={{ color: 'var(--text-body)', fontWeight: 500 }}>
-              {isMr ? statusTextMr : statusTextEn}
-            </span>
-          </div>
+
 
           {/* Theme Toggle Button */}
           <button
             type="button"
             onClick={toggleTheme}
             className="theme-toggle-btn"
-            title={isDark 
-              ? (isMr ? 'लाईट मोड सुरू करा (Switch to Light Mode)' : 'Switch to Light Mode') 
+            title={isDark
+              ? (isMr ? 'लाईट मोड सुरू करा (Switch to Light Mode)' : 'Switch to Light Mode')
               : (isMr ? 'डार्क मोड सुरू करा (Switch to Dark Mode)' : 'Switch to Dark Mode')}
             aria-label="Toggle theme"
           >
@@ -129,8 +105,8 @@ export default function Navbar({ lang, setLang, systemStatus, theme, toggleTheme
               {isDark ? '☀️' : '🌙'}
             </span>
             <span>
-              {isDark 
-                ? (isMr ? 'प्रकाश' : 'Light') 
+              {isDark
+                ? (isMr ? 'प्रकाश' : 'Light')
                 : (isMr ? 'गडद' : 'Dark')}
             </span>
           </button>

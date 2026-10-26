@@ -10,8 +10,10 @@ const path = require('path');
 const mlClient = require('../services/mlClient');
 const { syncDailyWeather } = require('../services/weatherService');
 
+const fs = require('fs');
 const ML_ROOT = path.join(__dirname, '../../../ml_service');
-const PYTHON_PATH = process.env.PYTHON_PATH || 'C:\\Python314\\python.exe';
+const defaultVenvPython = path.join(ML_ROOT, 'venv', 'Scripts', 'python.exe');
+const PYTHON_PATH = process.env.PYTHON_PATH || (fs.existsSync(defaultVenvPython) ? defaultVenvPython : 'python');
 const CRON_SCHEDULE = process.env.PRICE_SYNC_CRON || '0 6 * * *'; // Everyday at 6:00 AM
 
 /**

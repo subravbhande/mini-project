@@ -6,6 +6,7 @@ and Net Realizable Value decision recommendations.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import sys
@@ -30,6 +31,27 @@ from training.fetch_daily_weather import sync_daily_weather, fetch_5day_forecast
 
 logger = logging.getLogger("ml_service_api")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", stream=sys.stderr)
+
+
+# ---------------------------------------------------------------------------
+# Utility Helpers
+# ---------------------------------------------------------------------------
+
+def sanitize_for_json(obj: Any) -> Any:
+    """Recursively converts MongoDB ObjectId and other non-JSON types to strings/primitives."""
+    if isinstance(obj, dict):
+        res = {}
+        for k, v in obj.items():
+            if type(v).__name__ == "ObjectId":
+                res[k] = str(v)
+            else:
+                res[k] = sanitize_for_json(v)
+        return res
+    elif isinstance(obj, (list, tuple)):
+        return [sanitize_for_json(item) for item in obj]
+    elif type(obj).__name__ == "ObjectId":
+        return str(obj)
+    return obj
 
 
 # ---------------------------------------------------------------------------
@@ -77,6 +99,20 @@ class SyncPriceRequest(BaseModel):
 
 class SyncWeatherRequest(BaseModel):
     api_key: Optional[str] = Field(None, description="Optional custom OpenWeatherMap API key")
+
+
+class SyncAllRequest(BaseModel):
+    api_key: Optional[str] = Field(None, description="Shared or default API key")
+    price_api_key: Optional[str] = Field(None, description="Optional custom data.gov.in API key")
+    weather_api_key: Optional[str] = Field(None, description="Optional custom OpenWeatherMap API key")
+    force_seed: bool = Field(False, description="Force continuity seed fallback")
+    retrain_if_drift: bool = Field(True, description="Retrain model if drift is detected")
+    price_req: Optional[SyncPriceRequest] = Field(None, description="Nested price sync request params")
+    weather_req: Optional[SyncWeatherRequest] = Field(None, description="Nested weather sync request params")
+
+
+class FeedbackEvaluateRequest(BaseModel):
+    retrain_if_drift: bool = Field(True, description="Automatically retrain model if drift is detected")
 
 
 # ---------------------------------------------------------------------------
@@ -151,9 +187,16 @@ def forecast_price(req: PriceForecastRequest):
     try:
         as_of_date = req.as_of or req.start_date
         weather_fc = req.weather_forecast
-        if not weather_fc and req.district:
+        target_district = req.district
+        if not target_district and req.market:
+            for s in price_model.supported_series:
+                if s["market"].lower() == req.market.strip().lower():
+                    target_district = s["district"]
+                    break
+
+        if not weather_fc and target_district:
             try:
-                weather_fc = fetch_5day_forecast(req.district)
+                weather_fc = fetch_5day_forecast(target_district)
             except Exception as e:
                 logger.debug(f"OpenWeather 5-day forecast auto-fetch notice: {e}")
 
@@ -173,11 +216,15 @@ def forecast_price(req: PriceForecastRequest):
             for d in daily:
                 d["predicted_min_price"] = d.get("typical_daily_spread_min") or d.get("confidence_band_low") or round(d["predicted_modal_price"] * 0.95, 2)
                 d["predicted_max_price"] = d.get("typical_daily_spread_max") or d.get("confidence_band_high") or round(d["predicted_modal_price"] * 1.05, 2)
-                if "weather" not in d or not d["weather"].get("temp_max_c"):
+                w_info = d.get("weather")
+                if not isinstance(w_info, dict) or not w_info.get("temp_max_c"):
+                    temp_max = d.get("temp_c") if d.get("temp_c") is not None else 25.0
+                    precip = d.get("precipitation_mm") if d.get("precipitation_mm") is not None else (25.0 if d.get("weather_risk_flag") else 0.0)
+                    humidity = d.get("humidity_pct") if d.get("humidity_pct") is not None else 70.0
                     d["weather"] = {
-                        "temp_max_c": d.get("temp_c", 25.0),
-                        "precipitation_mm": d.get("precipitation_mm", 0.0),
-                        "humidity_pct": d.get("humidity_pct", 70.0),
+                        "temp_max_c": round(float(temp_max), 1),
+                        "precipitation_mm": round(float(precip), 1),
+                        "humidity_pct": round(float(humidity), 1),
                     }
 
             best_day = max(daily, key=lambda d: d["predicted_modal_price"])
@@ -268,9 +315,16 @@ def get_timing_decision(req: DecisionRequest):
 
     try:
         weather_fc = req.weather_forecast
-        if not weather_fc and req.district:
+        target_district = req.district
+        if not target_district and req.market:
+            for s in price_model.supported_series:
+                if s["market"].lower() == req.market.strip().lower():
+                    target_district = s["district"]
+                    break
+
+        if not weather_fc and target_district:
             try:
-                weather_fc = fetch_5day_forecast(req.district)
+                weather_fc = fetch_5day_forecast(target_district)
             except Exception as e:
                 logger.debug(f"OpenWeather 5-day forecast auto-fetch notice: {e}")
 
@@ -326,12 +380,12 @@ def get_timing_decision(req: DecisionRequest):
             "sell_fraction": economic_res.sell_fraction,
             "act_by_date": economic_res.act_by_date,
             "recommended_holding_days": economic_res.recommended_holding_days,
-            "nrv_today": economic_res.nrv_today,
-            "nrv_best": economic_res.nrv_best,
-            "uplift_pct": economic_res.uplift_pct,
+            "nrv_today": round(economic_res.nrv_today, 2),
+            "nrv_best": round(economic_res.nrv_best, 2),
+            "uplift_pct": round(economic_res.uplift_pct, 2),
             "confidence_label": economic_res.confidence_label,
-            "break_even_price_best_day": economic_res.break_even_price_best_day,
-            "break_even_pct_best_day": economic_res.break_even_pct_best_day,
+            "break_even_price_best_day": round(economic_res.break_even_price_best_day, 2),
+            "break_even_pct_best_day": round(economic_res.break_even_pct_best_day, 2),
             "reason": economic_res.reason,
             "reason_mr": economic_res.reason_mr,
             "data_as_of": price_res.data_as_of,
@@ -411,9 +465,12 @@ def trigger_daily_weather_sync(req: Optional[SyncWeatherRequest] = None):
     Fetch daily live weather and 5-day forecasts from OpenWeatherMap for Kolhapur & Sangli,
     persist observations to clean weather dataset, and update MongoDB weather_cache.
     """
+    price_model: PriceModel = get_price_model(app)
     try:
         api_key = req.api_key if req else None
         sync_meta = sync_daily_weather(api_key=api_key)
+        # Reload both prices and weather in memory so forecasts use latest weather
+        price_model.reload_prices()
         return {
             "success": True,
             "sync": sync_meta,
@@ -428,10 +485,11 @@ def trigger_daily_weather_sync(req: Optional[SyncWeatherRequest] = None):
 def get_current_weather_endpoint(district: str = "Kolhapur"):
     """Get live weather observation from OpenWeatherMap for district (Kolhapur / Sangli)."""
     try:
-        data = fetch_current_weather(district)
+        clean_dist = district.strip().capitalize()
+        data = fetch_current_weather(clean_dist)
         if not data:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Weather unavailable for {district}")
-        return {"status": "ok", "district": district, "current": data}
+        return {"status": "ok", "district": clean_dist, "current": data}
     except HTTPException:
         raise
     except Exception as e:
@@ -443,10 +501,11 @@ def get_current_weather_endpoint(district: str = "Kolhapur"):
 def get_weather_forecast_endpoint(district: str = "Kolhapur"):
     """Get 5-day daily aggregated meteorological forecast from OpenWeatherMap."""
     try:
-        forecasts = fetch_5day_forecast(district)
+        clean_dist = district.strip().capitalize()
+        forecasts = fetch_5day_forecast(clean_dist)
         return {
             "status": "ok",
-            "district": district,
+            "district": clean_dist,
             "count": len(forecasts),
             "forecasts": forecasts,
         }
@@ -456,50 +515,56 @@ def get_weather_forecast_endpoint(district: str = "Kolhapur"):
 
 
 @app.post("/sync/all")
-def trigger_all_sync(
-    price_req: Optional[SyncPriceRequest] = None,
-    weather_req: Optional[SyncWeatherRequest] = None,
-):
+def trigger_all_sync(req: Optional[SyncAllRequest] = None):
     """Convenience endpoint to sync daily prices, weather, reload model, and run feedback evaluation."""
     price_model: PriceModel = get_price_model(app)
     results = {}
+
+    p_key = (req.price_api_key or req.api_key or (req.price_req.api_key if req.price_req else None)) if req else None
+    force_seed = (req.force_seed or (req.price_req.force_seed if req.price_req else False)) if req else False
+    w_key = (req.weather_api_key or req.api_key or (req.weather_req.api_key if req.weather_req else None)) if req else None
+    retrain = req.retrain_if_drift if req else True
+
     try:
-        p_key = price_req.api_key if price_req else None
-        force_seed = price_req.force_seed if price_req else False
         results["price_sync"] = sync_daily_prices(api_key=p_key, force_seed=force_seed, allow_continuity_fallback=True)
         results["model_reload"] = price_model.reload_prices()
     except Exception as e:
         results["price_error"] = str(e)
 
     try:
-        w_key = weather_req.api_key if weather_req else None
         results["weather_sync"] = sync_daily_weather(api_key=w_key)
+        price_model.reload_prices()
     except Exception as e:
         results["weather_error"] = str(e)
 
     # Trigger daily feedback loop evaluation
     try:
         from models.feedback_loop import evaluate_daily_feedback
-        results["feedback_evaluation"] = evaluate_daily_feedback(retrain_if_drift=True)
+        eval_res = evaluate_daily_feedback(retrain_if_drift=retrain)
+        results["feedback_evaluation"] = sanitize_for_json(eval_res)
     except Exception as e:
         results["feedback_error"] = str(e)
 
-    return {"success": True, "results": results}
+    return {"success": True, "results": sanitize_for_json(results)}
 
 
 @app.post("/feedback/evaluate")
-def run_feedback_evaluation_endpoint(retrain_if_drift: bool = True):
+def run_feedback_evaluation_endpoint(
+    req: Optional[FeedbackEvaluateRequest] = None,
+    retrain_if_drift: Optional[bool] = None,
+):
     """
     Run daily feedback evaluation: matches pending forecasts with verified market actuals,
     calculates MAPE/MAE/coverage, updates rolling bias calibration, and optionally retrains.
     """
     try:
+        should_retrain = retrain_if_drift if retrain_if_drift is not None else (req.retrain_if_drift if req else True)
         from models.feedback_loop import evaluate_daily_feedback
-        res = evaluate_daily_feedback(retrain_if_drift=retrain_if_drift)
+        res = evaluate_daily_feedback(retrain_if_drift=should_retrain)
         if res.get("model_retrained"):
             price_model: PriceModel = get_price_model(app)
             price_model.reload_prices()
-        return {"success": True, "data": res}
+        return {"success": True, "data": sanitize_for_json(res)}
     except Exception as e:
         logger.error(f"Feedback evaluation failed: {e}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
@@ -511,7 +576,7 @@ def get_feedback_metrics_endpoint():
     try:
         from models.feedback_loop import get_feedback_summary
         summary = get_feedback_summary()
-        return {"success": True, "data": summary}
+        return {"success": True, "data": sanitize_for_json(summary)}
     except Exception as e:
         logger.error(f"Failed to retrieve feedback metrics: {e}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

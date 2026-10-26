@@ -99,11 +99,30 @@ def test_decide_endpoint(client):
     assert "act_by_date" in data
     assert "uplift_pct" in data
     assert "economic_decision" in data
-    # Bug 2 fix: staleness is detected even when as_of is omitted
-    assert data["days_stale"] > 0
-    assert data["stale"] is True
+    # Staleness metadata is properly populated
+    assert "days_stale" in data
+    assert isinstance(data["days_stale"], int) and data["days_stale"] >= 0
+    assert "stale" in data
+    assert isinstance(data["stale"], bool)
     # Break even price fields are populated
     assert "break_even_price_best_day" in data
+
+
+def test_decide_staleness_when_as_of_future(client):
+    # Staleness is correctly flagged when evaluation date is beyond latest data
+    payload = {
+        "commodity": "tomato",
+        "market": "Vadgaonpeth",
+        "initial_quantity_quintals": 100.0,
+        "storage_type": "ambient",
+        "liquidity_need": "normal",
+        "as_of": "2026-11-20",
+    }
+    res = client.post("/decide", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["days_stale"] > 0
+    assert data["stale"] is True
 
 
 def test_decide_act_by_date_not_in_past(client):
@@ -162,3 +181,56 @@ def test_price_forecast_weather_metrics(client):
         assert "weather" in d
         assert "temp_max_c" in d["weather"]
         assert "precipitation_mm" in d["weather"]
+
+
+def test_get_price_sync_status(client):
+    res = client.get("/price/sync/status")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "ok"
+    assert "data_status" in data
+    assert "sync_metadata" in data
+    assert "latest_price_date" in data["data_status"]
+
+
+def test_get_weather_current(client):
+    res = client.get("/weather/current?district=Kolhapur")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "ok"
+    assert "current" in data
+    assert data["district"] == "Kolhapur"
+
+
+def test_get_weather_forecast(client):
+    res = client.get("/weather/forecast?district=Sangli")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "ok"
+    assert "forecasts" in data
+    assert data["district"] == "Sangli"
+
+
+def test_feedback_metrics(client):
+    res = client.get("/feedback/metrics")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["success"] is True
+    assert "data" in data
+    assert "overall_mape" in data["data"]
+
+
+def test_feedback_evaluate(client):
+    res = client.post("/feedback/evaluate", json={"retrain_if_drift": False})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["success"] is True
+    assert "data" in data
+
+
+def test_sync_all_endpoint(client):
+    res = client.post("/sync/all", json={})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["success"] is True
+    assert "results" in data

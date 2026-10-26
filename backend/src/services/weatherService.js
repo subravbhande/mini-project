@@ -8,10 +8,12 @@ const axios = require('axios');
 const path = require('path');
 const { spawn } = require('child_process');
 
+const fs = require('fs');
 const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY || '71b1c519aa7a9dc576127852864819cd';
 const BASE_URL = 'https://api.openweathermap.org/data/2.5';
-const PYTHON_PATH = process.env.PYTHON_PATH || 'C:\\Python314\\python.exe';
 const ML_ROOT = path.join(__dirname, '../../../ml_service');
+const defaultVenvPython = path.join(ML_ROOT, 'venv', 'Scripts', 'python.exe');
+const PYTHON_PATH = process.env.PYTHON_PATH || (fs.existsSync(defaultVenvPython) ? defaultVenvPython : 'python');
 
 const DISTRICT_COORDS = {
   Kolhapur: { query: 'Kolhapur,IN', lat: 16.7050, lon: 74.2433 },

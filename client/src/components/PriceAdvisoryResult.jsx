@@ -17,7 +17,26 @@ export default function PriceAdvisoryResult({ result, lang, theme }) {
 
   const nrvToday = result.nrv_today ?? (result.farmer_summary?.estimated_earnings_today || 0);
   const nrvBest = result.nrv_best ?? (result.farmer_summary?.estimated_earnings_best_day || 0);
-  const upliftPct = result.uplift_pct ?? 0;
+
+  // Parse and calculate net economic uplift as a clean percentage (not ratio), up to 2 decimal places
+  let rawUplift = result.uplift_pct;
+  if (rawUplift === undefined || rawUplift === null) {
+    rawUplift = result.economic_decision?.uplift_pct;
+  }
+  if (rawUplift === undefined || rawUplift === null) {
+    rawUplift = nrvToday > 0 ? ((nrvBest - nrvToday) / nrvToday) * 100 : 0;
+  }
+
+  let numUplift = Number(rawUplift) || 0;
+  // If the value is a ratio (|val| < 1 and non-zero, e.g. 0.16 or 0.0476), convert it to percentage (e.g. 0.16 -> 16.00%)
+  if (Math.abs(numUplift) > 0 && Math.abs(numUplift) < 1) {
+    numUplift = numUplift * 100;
+  }
+
+  const upliftPct = numUplift;
+  const upliftSign = upliftPct > 0 ? '+' : '';
+  const formattedUplift = `${upliftSign}${upliftPct.toFixed(2)}%`;
+
   const confidenceLabel = result.confidence_label || 'Moderate';
   const breakEvenPrice = result.break_even_price_best_day || 0;
   const breakEvenPct = result.break_even_pct_best_day || 0;
@@ -46,26 +65,26 @@ export default function PriceAdvisoryResult({ result, lang, theme }) {
   const badgeBg = isHold
     ? (isDark ? 'rgba(16, 185, 129, 0.16)' : 'rgba(16, 185, 129, 0.12)')
     : isPartial
-    ? (isDark ? 'rgba(245, 158, 11, 0.16)' : 'rgba(245, 158, 11, 0.12)')
-    : (isDark ? 'rgba(239, 68, 68, 0.16)' : 'rgba(239, 68, 68, 0.12)');
+      ? (isDark ? 'rgba(245, 158, 11, 0.16)' : 'rgba(245, 158, 11, 0.12)')
+      : (isDark ? 'rgba(239, 68, 68, 0.16)' : 'rgba(239, 68, 68, 0.12)');
 
   const badgeBorder = isHold
     ? (isDark ? 'rgba(16, 185, 129, 0.45)' : 'rgba(16, 185, 129, 0.4)')
     : isPartial
-    ? (isDark ? 'rgba(245, 158, 11, 0.45)' : 'rgba(245, 158, 11, 0.4)')
-    : (isDark ? 'rgba(239, 68, 68, 0.45)' : 'rgba(239, 68, 68, 0.4)');
+      ? (isDark ? 'rgba(245, 158, 11, 0.45)' : 'rgba(245, 158, 11, 0.4)')
+      : (isDark ? 'rgba(239, 68, 68, 0.45)' : 'rgba(239, 68, 68, 0.4)');
 
   const formattedActBy = actByDate
     ? new Date(actByDate).toLocaleDateString(isMr ? 'mr-IN' : 'en-US', {
-        weekday: 'short',
-        day: 'numeric',
-        month: 'short',
-      })
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+    })
     : '';
 
   return (
     <div className="glass-card" style={{ padding: '28px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      
+
       {/* Staleness Warning Banner if data is aged */}
       {isStale && (
         <div style={{
@@ -143,8 +162,8 @@ export default function PriceAdvisoryResult({ result, lang, theme }) {
               {isHold
                 ? isMr ? 'सल्ला: शेतमाल राखून ठेवा (HOLD)' : 'ADVISORY: HOLD PRODUCE'
                 : isPartial
-                ? isMr ? 'सल्ला: अर्धा विका / अर्धा ठेवा (PARTIAL-SELL)' : 'ADVISORY: PARTIAL-SELL (50%)'
-                : isMr ? 'सल्ला: आजच विक्री करा (SELL TODAY)' : 'ADVISORY: SELL TODAY'}
+                  ? isMr ? 'सल्ला: अर्धा विका / अर्धा ठेवा (PARTIAL-SELL)' : 'ADVISORY: PARTIAL-SELL (50%)'
+                  : isMr ? 'सल्ला: आजच विक्री करा (SELL TODAY)' : 'ADVISORY: SELL TODAY'}
             </span>
 
             <span style={{
@@ -277,8 +296,8 @@ export default function PriceAdvisoryResult({ result, lang, theme }) {
           <div style={{ fontSize: '0.78rem', color: 'var(--text-gold)', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 700 }}>
             📈 {isMr ? 'अपेक्षित निव्वळ नफा/तोटा' : 'Net Economic Uplift'}
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: upliftPct > 0 ? 'var(--text-emerald)' : 'var(--text-red)' }}>
-            {upliftPct > 0 ? `+${upliftPct}%` : `${upliftPct}%`}
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: upliftPct > 0 ? 'var(--text-emerald)' : (upliftPct < 0 ? 'var(--text-red)' : 'var(--text-title)') }}>
+            {formattedUplift}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
             {upliftPct > 0
@@ -321,9 +340,7 @@ export default function PriceAdvisoryResult({ result, lang, theme }) {
         fontSize: '0.75rem',
         color: 'var(--text-muted)'
       }}>
-        <div>
-          <span>⚙️ Distress-Sale Timing Advisor • Direct Multi-Step Horizon Model & Dynamic Shelf-Life Simulation</span>
-        </div>
+
         <div>
           <span>APMC: <strong style={{ color: 'var(--text-title)' }}>{market}</strong> ({district}) • Horizon: <strong style={{ color: 'var(--text-title)' }}>{dailyForecasts.length} Days</strong></span>
         </div>

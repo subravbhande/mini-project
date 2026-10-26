@@ -193,8 +193,8 @@ def evaluate_decision(
         best_snap = snapshots[best_day_idx - 1]
         act_by_date = best_snap.date
         rec_days = best_day_idx
-        reason_en = f"Favorable price gain projected (+{round(net_uplift_pct, 1)}% net uplift by {act_by_date}). Produce quality remains safe."
-        reason_mr = f"भावात वाढ होण्याची शक्यता (+{round(net_uplift_pct, 1)}% निव्वळ नफा). {act_by_date} पर्यंत माल सांभाळा."
+        reason_en = f"Favorable price gain projected (+{round(net_uplift_pct, 2)}% net uplift by {act_by_date}). Produce quality remains safe."
+        reason_mr = f"भावात वाढ होण्याची शक्यता (+{round(net_uplift_pct, 2)}% निव्वळ नफा). {act_by_date} पर्यंत माल सांभाळा."
 
     # Rule 4: Positive uplift but Low confidence or Moderate spoilage risk -> PARTIAL-SELL
     elif net_uplift_pct > 1.0 and (chosen_confidence == "Low" or best_risk == "MODERATE"):
@@ -220,13 +220,13 @@ def evaluate_decision(
         sell_fraction=sell_fraction,
         act_by_date=act_by_date,
         recommended_holding_days=rec_days,
-        nrv_today=nrv_today,
-        nrv_best=best_nrv,
-        uplift_pct=net_uplift_pct,
+        nrv_today=round(nrv_today, 2),
+        nrv_best=round(best_nrv, 2),
+        uplift_pct=round(net_uplift_pct, 2),
         confidence_label=chosen_confidence,
         reason=reason_en,
         reason_mr=reason_mr,
         daily_schedule=snapshots,
-        break_even_price_best_day=best_be_price,
-        break_even_pct_best_day=best_be_pct,
+        break_even_price_best_day=round(best_be_price, 2),
+        break_even_pct_best_day=round(best_be_pct, 2),
     )

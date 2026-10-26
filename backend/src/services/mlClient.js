@@ -45,8 +45,17 @@ const mlClient = {
   },
 
   getPriceForecast: async (params) => {
-    const res = await client.post('/price/forecast', params);
-    return res.data;
+    try {
+      const res = await client.post('/price/forecast', params);
+      return res.data;
+    } catch (err) {
+      if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
+        console.warn(`[ML Client] FastAPI HTTP service unavailable at ${ML_SERVICE_URL} (${err.message}). Using local Python CLI model fallback...`);
+        const { getPriceForecast } = require('./mlService');
+        return await getPriceForecast(params);
+      }
+      throw err;
+    }
   },
 
   simulateDecay: async (params) => {

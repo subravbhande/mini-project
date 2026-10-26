@@ -262,7 +262,9 @@ def evaluate_daily_feedback(retrain_if_drift: bool = True) -> Dict[str, Any]:
     if db is not None and new_evaluations:
         try:
             coll = db["model_feedback"]
-            coll.insert_many(new_evaluations)
+            # Insert shallow copies without mutating in-memory evaluation records with MongoDB ObjectId
+            docs_to_insert = [{k: v for k, v in e.items() if k != "_id"} for e in new_evaluations]
+            coll.insert_many(docs_to_insert)
             logger.info(f"Persisted {len(new_evaluations)} new evaluations to MongoDB Atlas model_feedback.")
         except Exception as e:
             logger.debug(f"Mongo model_feedback notice: {e}")
@@ -276,6 +278,14 @@ def evaluate_daily_feedback(retrain_if_drift: bool = True) -> Dict[str, Any]:
         logger.warning(f"Model drift detected (Rolling MAPE={calibration_data.get('overall_mape')}%). Triggering feedback-driven retrain...")
         retrained = trigger_model_retrain()
 
+    # Sanitize recent evaluations for JSON serialization
+    sanitized_recent = []
+    for item in (evaluations[-5:] if evaluations else []):
+        clean_item = dict(item)
+        if "_id" in clean_item and not isinstance(clean_item["_id"], str):
+            clean_item["_id"] = str(clean_item["_id"])
+        sanitized_recent.append(clean_item)
+
     summary = {
         "evaluated_at": datetime.now().isoformat(),
         "newly_evaluated_count": len(new_evaluations),
@@ -286,7 +296,7 @@ def evaluate_daily_feedback(retrain_if_drift: bool = True) -> Dict[str, Any]:
         "drift_detected": calibration_data.get("drift_detected", False),
         "model_retrained": retrained,
         "calibration": calibration_data,
-        "recent_evaluations": evaluations[-5:] if evaluations else [],
+        "recent_evaluations": sanitized_recent,
     }
 
     logger.info(f"Daily feedback loop complete: {len(new_evaluations)} new evaluations, Overall MAPE={summary['overall_mape']}%, Band Coverage={summary['band_coverage_pct']}%.")
@@ -431,6 +441,13 @@ def get_feedback_summary() -> Dict[str, Any]:
         1 for entry in logs for pred in entry.get("predictions", []) if pred.get("status") == "pending"
     )
 
+    sanitized_evals = []
+    for item in (evals[-10:] if evals else []):
+        clean_item = dict(item)
+        if "_id" in clean_item and not isinstance(clean_item["_id"], str):
+            clean_item["_id"] = str(clean_item["_id"])
+        sanitized_evals.append(clean_item)
+
     return {
         "status": "active",
         "total_logged_forecasts": len(logs),
@@ -443,7 +460,7 @@ def get_feedback_summary() -> Dict[str, Any]:
         "drift_detected": cal.get("drift_detected", False),
         "last_calibrated_at": cal.get("updated_at"),
         "series_bias": cal.get("series_bias", {}),
-        "recent_evaluations": evals[-10:] if evals else [],
+        "recent_evaluations": sanitized_evals,
     }
 
 
