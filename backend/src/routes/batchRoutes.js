@@ -7,6 +7,7 @@ router.use(auth);
 
 router.get('/', batchController.getBatches);
 router.post('/', batchController.createBatch);
+router.get('/stats/summary', batchController.getHistorySummary);
 router.get('/:id', batchController.getBatchById);
 router.delete('/:id', batchController.deleteBatch);
 

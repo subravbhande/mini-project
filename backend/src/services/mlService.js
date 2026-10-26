@@ -6,22 +6,15 @@ const ML_ROOT = path.join(__dirname, "../../../ml_service");
 const venvWin = path.join(ML_ROOT, "venv", "Scripts", "python.exe");
 const venvUnix = path.join(ML_ROOT, "venv", "bin", "python");
 const defaultPython = fs.existsSync(venvWin) ? venvWin : (fs.existsSync(venvUnix) ? venvUnix : "python");
-const PYTHON  = process.env.PYTHON_PATH || defaultPython;
-const SCRIPT  = path.join(ML_ROOT, "predict_api.py");
+const PYTHON = process.env.PYTHON_PATH || defaultPython;
+const SCRIPT = path.join(ML_ROOT, "predict_api.py");
 
 /**
- * Call the AgriSense XGBoost price model.
+ * Executes the Python ML bridge script passing JSON over stdin.
  * @param {Object} params
- * @param {string} params.commodity            - "Tomato" | "Onion"
- * @param {string} params.market               - e.g. "Kolhapur", "Sangli"
- * @param {string} params.district             - "Kolhapur" | "Sangli"
- * @param {number} [params.quantity_quintals]  - farmer's harvest qty
- * @param {string} [params.start_date]         - ISO date (default: tomorrow)
- * @param {number} [params.horizon_days]       - 1-14 (default: 7)
- * @param {Array}  [params.weather_forecast]   - optional daily weather array
- * @returns {Promise<Object>} PriceForecast + farmer_summary
+ * @returns {Promise<Object>}
  */
-function getPriceForecast(params) {
+function runPythonModel(params) {
   return new Promise((resolve, reject) => {
     const proc = spawn(PYTHON, [SCRIPT], { cwd: ML_ROOT });
 
@@ -54,4 +47,18 @@ function getPriceForecast(params) {
   });
 }
 
-module.exports = { getPriceForecast };
+/**
+ * Call the AgriSense XGBoost price model.
+ */
+function getPriceForecast(params) {
+  return runPythonModel({ ...params, mode: "forecast" });
+}
+
+/**
+ * Call the AgriSense timing decision optimizer (Price + Shelf-life decay + Storage cost + Liquidity).
+ */
+function getTimingDecision(params) {
+  return runPythonModel({ ...params, mode: "decide" });
+}
+
+module.exports = { getPriceForecast, getTimingDecision };

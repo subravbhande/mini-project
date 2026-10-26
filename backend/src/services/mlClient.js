@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { getPriceForecast: fallbackPriceForecast, getTimingDecision: fallbackTimingDecision } = require('./mlService');
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
 
@@ -10,15 +11,31 @@ const client = axios.create({
   },
 });
 
+function isConnectionError(err) {
+  if (!err) return false;
+  const code = err.code;
+  const msg = err.message || '';
+  return (
+    code === 'ECONNREFUSED' ||
+    code === 'ENOTFOUND' ||
+    code === 'ETIMEDOUT' ||
+    code === 'EAI_AGAIN' ||
+    code === 'ERR_NETWORK' ||
+    msg.includes('ECONNREFUSED') ||
+    msg.includes('connect') ||
+    msg.includes('Network Error')
+  );
+}
+
 const mlClient = {
   getHealth: async () => {
     try {
-      const res = await client.get('/health');
+      const res = await client.get('/health', { timeout: 2000 });
       return { status: 'online', data: res.data };
     } catch (err) {
       return {
         status: 'offline',
-        fallbackAvailable: false,
+        fallbackAvailable: true,
         error: err.code || err.message,
       };
     }
@@ -26,7 +43,7 @@ const mlClient = {
 
   getSeries: async () => {
     try {
-      const res = await client.get('/series');
+      const res = await client.get('/series', { timeout: 3000 });
       return res.data;
     } catch (err) {
       console.warn(`[ML Client] /series unavailable at ${ML_SERVICE_URL} (${err.code || err.message}). Using local fallback.`);
@@ -49,10 +66,9 @@ const mlClient = {
       const res = await client.post('/price/forecast', params);
       return res.data;
     } catch (err) {
-      if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
+      if (isConnectionError(err)) {
         console.warn(`[ML Client] FastAPI HTTP service unavailable at ${ML_SERVICE_URL} (${err.message}). Using local Python CLI model fallback...`);
-        const { getPriceForecast } = require('./mlService');
-        return await getPriceForecast(params);
+        return await fallbackPriceForecast(params);
       }
       throw err;
     }
@@ -64,8 +80,16 @@ const mlClient = {
   },
 
   getDecision: async (params) => {
-    const res = await client.post('/decide', params);
-    return res.data;
+    try {
+      const res = await client.post('/decide', params);
+      return res.data;
+    } catch (err) {
+      if (isConnectionError(err)) {
+        console.warn(`[ML Client] FastAPI HTTP service unavailable at ${ML_SERVICE_URL} (${err.message}). Using local Python CLI decision fallback...`);
+        return await fallbackTimingDecision(params);
+      }
+      throw err;
+    }
   },
 
   syncDailyPrices: async (params = {}) => {
@@ -74,7 +98,7 @@ const mlClient = {
   },
 
   getSyncStatus: async () => {
-    const res = await client.get('/price/sync/status');
+    const res = await client.get('/price/sync/status', { timeout: 3000 });
     return res.data;
   },
 
@@ -99,7 +123,7 @@ const mlClient = {
   },
 
   getFeedbackMetrics: async () => {
-    const res = await client.get('/feedback/metrics');
+    const res = await client.get('/feedback/metrics', { timeout: 3000 });
     return res.data;
   },
 
@@ -115,4 +139,3 @@ const mlClient = {
 };
 
 module.exports = mlClient;
-

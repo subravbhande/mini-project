@@ -134,9 +134,8 @@ exports.logOutcome = async (req, res) => {
     try {
       const latestDecision = await Decision.findOne({ batchId }).sort({ createdAt: -1 });
       if (latestDecision) {
-        const qty = actualQuantitySold || batch.quantityQuintals || 1;
-        const baselineRevenue = (latestDecision.nrvToday || 0) * qty;
-        const realizedRev = actualRevenue || (actualPrice * qty);
+        const baselineRevenue = latestDecision.nrvToday || 0;
+        const realizedRev = actualRevenue || (actualPrice * actualQuantitySold);
         const upliftEarned = realizedRev - baselineRevenue;
         
         feedbackMeta = {

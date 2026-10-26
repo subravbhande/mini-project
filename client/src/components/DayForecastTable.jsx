@@ -1,4 +1,5 @@
 import React from 'react';
+import { ClipboardList, Star, AlertTriangle } from 'lucide-react';
 
 export default function DayForecastTable({ dailyForecasts, bestSellDate, lang, theme }) {
   const isMr = lang === 'mr';
@@ -8,8 +9,9 @@ export default function DayForecastTable({ dailyForecasts, bestSellDate, lang, t
 
   return (
     <div style={{ marginTop: '24px', overflowX: 'auto' }}>
-      <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-title)', marginBottom: '12px' }}>
-        📋 {isMr ? 'दैनंदिन अंदाज व तपशील (Daily Breakdown)' : 'Daily Price & Weather Breakdown'}
+      <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-title)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <ClipboardList size={16} />
+        <span>{isMr ? 'दैनंदिन अंदाज व तपशील (Daily Breakdown)' : 'Daily Price & Weather Breakdown'}</span>
       </h3>
 
       <table style={{
@@ -89,8 +91,6 @@ export default function DayForecastTable({ dailyForecasts, bestSellDate, lang, t
                   ₹{Math.round(day.predicted_min_price || (day.predicted_modal_price * 0.95))} – ₹{Math.round(day.predicted_max_price || (day.predicted_modal_price * 1.05))}
                 </td>
 
-                {/* Weather */}
-
 
                 {/* Action / Badge */}
                 <td style={{
@@ -107,9 +107,13 @@ export default function DayForecastTable({ dailyForecasts, bestSellDate, lang, t
                       fontSize: '0.75rem',
                       padding: '4px 8px',
                       borderRadius: '6px',
-                      border: '1px solid var(--border-highlight)'
+                      border: '1px solid var(--border-highlight)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
                     }}>
-                      ⭐ {isMr ? 'उत्तम भाव (Peak)' : 'Peak Price'}
+                      <Star size={12} />
+                      <span>{isMr ? 'उत्तम भाव (Peak)' : 'Peak Price'}</span>
                     </span>
                   ) : day.weather_risk_flag ? (
                     <span style={{
@@ -119,9 +123,13 @@ export default function DayForecastTable({ dailyForecasts, bestSellDate, lang, t
                       fontSize: '0.75rem',
                       padding: '4px 8px',
                       borderRadius: '6px',
-                      border: '1px solid rgba(245, 158, 11, 0.35)'
+                      border: '1px solid rgba(245, 158, 11, 0.35)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
                     }}>
-                      ⚠️ {isMr ? 'हवामान सांभाळा' : 'Check Weather'}
+                      <AlertTriangle size={12} />
+                      <span>{isMr ? 'हवामान सांभाळा' : 'Check Weather'}</span>
                     </span>
                   ) : (
                     <span style={{

@@ -120,3 +120,48 @@ exports.deleteBatch = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
+exports.getHistorySummary = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const Outcome = require('../models/Outcome');
+
+    const batches = await CropBatch.find({ userId });
+    const outcomes = await Outcome.find({ userId }).populate('batchId');
+
+    const totalBatches = batches.length;
+    const activeBatches = batches.filter((b) => b.status === 'active').length;
+    const soldBatches = batches.filter((b) => b.status === 'sold').length;
+
+    let totalRealizedRevenue = 0;
+    let totalRealizedUplift = 0;
+    let profitableSalesCount = 0;
+
+    for (const out of outcomes) {
+      totalRealizedRevenue += (out.actualRevenue || 0);
+
+      const decision = await Decision.findOne({ batchId: out.batchId }).sort({ createdAt: 1 });
+      if (decision) {
+        const baselineRev = decision.nrvToday || 0;
+        const uplift = (out.actualRevenue || 0) - baselineRev;
+        totalRealizedUplift += uplift;
+        if (uplift >= 0) profitableSalesCount++;
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        totalBatches,
+        activeBatches,
+        soldBatches,
+        totalRealizedRevenue: Math.round(totalRealizedRevenue),
+        totalRealizedUplift: Math.round(totalRealizedUplift),
+        profitableSalesCount,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+

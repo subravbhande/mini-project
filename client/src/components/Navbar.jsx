@@ -1,30 +1,30 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { Sprout, BarChart3, ClipboardList, Lock, User, LogOut, Sun, Moon, ChevronDown } from 'lucide-react';
 
-export default function Navbar({ lang, setLang, systemStatus, theme, toggleTheme }) {
-  const isOnline = systemStatus?.status === 'ok';
-  const isMlOnline = systemStatus?.ml_service?.status === 'online';
-  const isDbConnected = systemStatus?.database?.status === 'connected';
-
-  let statusColor = '#22c55e';
-  let statusTextEn = 'XGBoost 49-Feature AI Live';
-  let statusTextMr = 'XGBoost मॉडेल सक्रिय';
-
-  if (!isOnline && systemStatus !== undefined && systemStatus !== null) {
-    statusColor = '#ef4444';
-    statusTextEn = 'Backend Reconnecting';
-    statusTextMr = 'सर्व्हर पुन्हा जोडत आहे';
-  } else if (systemStatus?.ml_service?.fallbackAvailable && !isMlOnline) {
-    statusColor = '#38bdf8';
-    statusTextEn = 'ML Python Bridge Active';
-    statusTextMr = 'पायथन ML सक्रिय';
-  } else if (isMlOnline) {
-    statusColor = '#22c55e';
-    statusTextEn = 'ML Microservice + Backend Live';
-    statusTextMr = 'ML मायक्रोसर्व्हिस सक्रिय';
-  }
+export default function Navbar({
+  lang,
+  setLang,
+  systemStatus,
+  theme,
+  toggleTheme,
+  currentView = 'advisory', // 'advisory' | 'history'
+  setCurrentView,
+  onOpenAuthModal,
+}) {
+  const { user, isAuthenticated, logout } = useAuth();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const isDark = theme === 'dark';
   const isMr = lang === 'mr';
+
+  const handleHistoryClick = () => {
+    if (isAuthenticated) {
+      setCurrentView('history');
+    } else {
+      onOpenAuthModal('login');
+    }
+  };
 
   return (
     <header style={{
@@ -35,7 +35,7 @@ export default function Navbar({ lang, setLang, systemStatus, theme, toggleTheme
       position: 'sticky',
       top: 0,
       zIndex: 50,
-      padding: '14px 24px',
+      padding: '12px 24px',
       transition: 'background 0.25s ease, border-color 0.25s ease',
     }}>
       <div style={{
@@ -48,7 +48,10 @@ export default function Navbar({ lang, setLang, systemStatus, theme, toggleTheme
         gap: '12px'
       }}>
         {/* Brand */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div
+          onClick={() => setCurrentView('advisory')}
+          style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
+        >
           <div style={{
             width: '42px',
             height: '42px',
@@ -60,24 +63,13 @@ export default function Navbar({ lang, setLang, systemStatus, theme, toggleTheme
             fontSize: '22px',
             boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'
           }}>
-            🌱
+            <Sprout size={24} color="#ffffff" />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-title)' }}>
                 AgriSense
               </span>
-              {/* <span style={{
-                background: 'rgba(16, 185, 129, 0.15)',
-                color: 'var(--text-emerald)',
-                fontSize: '0.7rem',
-                fontWeight: 700,
-                padding: '2px 8px',
-                borderRadius: '6px',
-                border: '1px solid rgba(16, 185, 129, 0.3)'
-              }}>
-                ML ADVISORY
-              </span> */}
             </div>
             <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
               {isMr
@@ -87,9 +79,193 @@ export default function Navbar({ lang, setLang, systemStatus, theme, toggleTheme
           </div>
         </div>
 
-        {/* Right side controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        {/* Center / Navigation Tabs */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            type="button"
+            id="nav-tab-advisory"
+            onClick={() => setCurrentView('advisory')}
+            style={{
+              background: currentView === 'advisory' ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+              color: currentView === 'advisory' ? 'var(--text-emerald)' : 'var(--text-body)',
+              border: currentView === 'advisory' ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid transparent',
+              borderRadius: '10px',
+              padding: '6px 14px',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            <BarChart3 size={16} />
+            <span>{isMr ? 'बाजार भाव सल्ला' : 'Price Advisory'}</span>
+          </button>
 
+          <button
+            type="button"
+            id="nav-tab-history"
+            onClick={handleHistoryClick}
+            style={{
+              background: currentView === 'history' ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+              color: currentView === 'history' ? 'var(--text-emerald)' : 'var(--text-body)',
+              border: currentView === 'history' ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid transparent',
+              borderRadius: '10px',
+              padding: '6px 14px',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            <ClipboardList size={16} />
+            <span>{isMr ? 'माझा इतिहास' : 'My History'}</span>
+            {!isAuthenticated && (
+              <span style={{
+                fontSize: '0.65rem',
+                background: 'var(--bg-pill)',
+                padding: '2px 6px',
+                borderRadius: '4px',
+                color: 'var(--text-muted)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '3px'
+              }}>
+                <Lock size={11} /> Login
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Right side controls (User, Theme, Language) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {/* Auth Button or User Dropdown */}
+          {isAuthenticated ? (
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                style={{
+                  background: 'var(--bg-subtle)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '10px',
+                  padding: '6px 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  cursor: 'pointer',
+                  color: 'var(--text-title)',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                }}
+              >
+                <User size={16} />
+                <span style={{ maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {user?.name || (isMr ? 'बळीराजा' : 'Farmer')}
+                </span>
+                <ChevronDown size={14} />
+              </button>
+
+              {dropdownOpen && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    right: 0,
+                    top: '110%',
+                    background: 'var(--bg-nav)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: '12px',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+                    padding: '8px',
+                    minWidth: '180px',
+                    zIndex: 100,
+                    backdropFilter: 'blur(12px)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                  }}
+                >
+                  <div style={{ padding: '6px 10px', borderBottom: '1px solid var(--border-subtle)', marginBottom: '4px' }}>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-title)' }}>{user?.name}</div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{user?.phone}</div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setCurrentView('history');
+                      setDropdownOpen(false);
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      textAlign: 'left',
+                      padding: '8px 10px',
+                      borderRadius: '6px',
+                      color: 'var(--text-title)',
+                      fontSize: '0.8rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    <ClipboardList size={16} />
+                    <span>{isMr ? 'माझा शेतमाल इतिहास' : 'My Harvest History'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      logout();
+                      setDropdownOpen(false);
+                      setCurrentView('advisory');
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      textAlign: 'left',
+                      padding: '8px 10px',
+                      borderRadius: '6px',
+                      color: 'var(--text-red)',
+                      fontSize: '0.8rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      borderTop: '1px solid var(--border-subtle)',
+                      marginTop: '4px',
+                    }}
+                  >
+                    <LogOut size={16} />
+                    <span>{isMr ? 'बाहेर पडा (Logout)' : 'Logout'}</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onOpenAuthModal('login')}
+              style={{
+                background: 'rgba(16, 185, 129, 0.15)',
+                color: 'var(--text-emerald)',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
+                borderRadius: '10px',
+                padding: '6px 14px',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <User size={16} />
+              <span>{isMr ? 'लॉगिन / नोंदणी' : 'Sign In'}</span>
+            </button>
+          )}
 
           {/* Theme Toggle Button */}
           <button
@@ -101,8 +277,8 @@ export default function Navbar({ lang, setLang, systemStatus, theme, toggleTheme
               : (isMr ? 'डार्क मोड सुरू करा (Switch to Dark Mode)' : 'Switch to Dark Mode')}
             aria-label="Toggle theme"
           >
-            <span className="theme-icon-rotate" style={{ fontSize: '1rem' }}>
-              {isDark ? '☀️' : '🌙'}
+            <span className="theme-icon-rotate" style={{ display: 'inline-flex', alignItems: 'center' }}>
+              {isDark ? <Sun size={16} /> : <Moon size={16} />}
             </span>
             <span>
               {isDark

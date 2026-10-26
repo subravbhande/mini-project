@@ -1,4 +1,5 @@
 import React from 'react';
+import { Calendar, CalendarDays, Zap } from 'lucide-react';
 
 export default function PriceQueryForm({
   formData,
@@ -25,9 +26,13 @@ export default function PriceQueryForm({
     ],
   };
 
+  const cropKey = formData?.commodity
+    ? (formData.commodity.charAt(0).toUpperCase() + formData.commodity.slice(1).toLowerCase())
+    : 'Tomato';
+
   const availableMarkets =
-    marketsData?.markets?.[formData.commodity] ||
-    defaultMarkets[formData.commodity] ||
+    marketsData?.markets?.[cropKey] ||
+    defaultMarkets[cropKey] ||
     defaultMarkets.Tomato;
 
   const handleCommoditySelect = (crop) => {
@@ -76,7 +81,7 @@ export default function PriceQueryForm({
     }));
   };
 
-  const cropStorageOptions = formData.commodity === 'Onion'
+  const cropStorageOptions = cropKey === 'Onion'
     ? [
         { id: 'ambient', name: isMr ? 'खुली साठवण (Ambient)' : 'Ambient' },
         { id: 'ventilated_chawl', name: isMr ? 'कांदा चाळ (Chawl)' : 'Ventilated Chawl' },
@@ -88,8 +93,8 @@ export default function PriceQueryForm({
         { id: 'cold_storage', name: isMr ? 'कोल्ड स्टोरेज (Cold)' : 'Cold Storage' },
       ];
 
-  const isTomatoSelected = formData.commodity === 'Tomato';
-  const isOnionSelected = formData.commodity === 'Onion';
+  const isTomatoSelected = cropKey === 'Tomato';
+  const isOnionSelected = cropKey === 'Onion';
 
   return (
     <div className="glass-card" style={{ padding: '24px', position: 'relative' }}>
@@ -135,14 +140,33 @@ export default function PriceQueryForm({
                 padding: '12px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '10px',
+                gap: '12px',
                 cursor: 'pointer',
                 textAlign: 'left',
                 transition: 'all 0.2s ease',
                 boxShadow: isTomatoSelected ? '0 4px 12px rgba(239, 68, 68, 0.18)' : 'none',
               }}
             >
-              <span style={{ fontSize: '1.8rem' }}>🍅</span>
+              <div style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '10px',
+                background: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                flexShrink: 0,
+                boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+                border: '1px solid rgba(0,0,0,0.06)',
+                padding: '3px',
+              }}>
+                <img
+                  src="/tomato.jpg"
+                  alt={isMr ? 'टोमॅटो' : 'Tomato'}
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+              </div>
               <div>
                 <div style={{ fontWeight: 700, color: 'var(--text-title)', fontSize: '0.95rem' }}>
                   {isMr ? 'टोमॅटो' : 'Tomato'}
@@ -168,14 +192,33 @@ export default function PriceQueryForm({
                 padding: '12px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '10px',
+                gap: '12px',
                 cursor: 'pointer',
                 textAlign: 'left',
                 transition: 'all 0.2s ease',
                 boxShadow: isOnionSelected ? '0 4px 12px rgba(245, 158, 11, 0.18)' : 'none',
               }}
             >
-              <span style={{ fontSize: '1.8rem' }}>🧅</span>
+              <div style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '10px',
+                background: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                flexShrink: 0,
+                boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+                border: '1px solid rgba(0,0,0,0.06)',
+                padding: '3px',
+              }}>
+                <img
+                  src="/onion.jpg"
+                  alt={isMr ? 'कांदा' : 'Onion'}
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+              </div>
               <div>
                 <div style={{ fontWeight: 700, color: 'var(--text-title)', fontSize: '0.95rem' }}>
                   {isMr ? 'कांदा' : 'Onion'}
@@ -364,9 +407,14 @@ export default function PriceQueryForm({
                 fontSize: '0.85rem',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
               }}
             >
-              📅 {isMr ? '३ दिवस (जलद अंदाज)' : '3 Days (Fast)'}
+              <Calendar size={15} />
+              <span>{isMr ? '३ दिवस (जलद अंदाज)' : '3 Days (Fast)'}</span>
             </button>
             <button
               type="button"
@@ -385,9 +433,14 @@ export default function PriceQueryForm({
                 fontSize: '0.85rem',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
               }}
             >
-              🗓️ {isMr ? '५ दिवस (शिफारस केलेले)' : '5 Days (Recommended)'}
+              <CalendarDays size={15} />
+              <span>{isMr ? '५ दिवस (शिफारस केलेले)' : '5 Days (Recommended)'}</span>
             </button>
           </div>
         </div>
@@ -406,7 +459,7 @@ export default function PriceQueryForm({
             </>
           ) : (
             <>
-              <span>⚡</span>
+              <Zap size={18} />
               <span>{isMr ? 'विक्री वेळेचा AI सल्ला मिळवा' : 'Evaluate Sale Timing Advisory'}</span>
             </>
           )}

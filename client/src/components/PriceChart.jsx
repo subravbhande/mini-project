@@ -9,6 +9,7 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from 'recharts';
+import { Star, Thermometer, CloudRain, Sun } from 'lucide-react';
 
 function ChartTooltip({ active, payload, isMr, theme }) {
   if (active && payload && payload.length) {
@@ -41,9 +42,13 @@ function ChartTooltip({ active, payload, isMr, theme }) {
               fontWeight: 700,
               padding: '2px 6px',
               borderRadius: '4px',
-              border: '1px solid var(--border-highlight)'
+              border: '1px solid var(--border-highlight)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px'
             }}>
-              ⭐ {isMr ? 'सर्वोत्तम दिवस' : 'BEST DAY'}
+              <Star size={12} />
+              <span>{isMr ? 'सर्वोत्तम दिवस' : 'BEST DAY'}</span>
             </span>
           )}
         </div>
@@ -64,9 +69,19 @@ function ChartTooltip({ active, payload, isMr, theme }) {
           fontSize: '0.75rem',
           color: 'var(--text-muted)'
         }}>
-          <span>🌡️ {data.temp}</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <Thermometer size={13} /> {data.temp}
+          </span>
           <span>
-            {data.rain > 0 ? `🌧️ ${data.rain} mm` : '☀️ कोरडे/Dry'}
+            {data.rain > 0 ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <CloudRain size={13} /> {data.rain} mm
+              </span>
+            ) : (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <Sun size={13} /> {isMr ? 'कोरडे' : 'Dry'}
+              </span>
+            )}
           </span>
         </div>
       </div>

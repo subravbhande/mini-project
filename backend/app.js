@@ -1,4 +1,4 @@
-require("dotenv").config();
+require("dotenv").config(); // Reloads environment variables including FAST2SMS_API_KEY
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -77,7 +77,7 @@ const mlLimiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 30,
+  max: 100,
   message: { success: false, error: "Too many authentication attempts, please try again later." },
   standardHeaders: true,
   legacyHeaders: false,
@@ -92,6 +92,7 @@ app.use("/api/price", mlLimiter, priceRoutes);
 app.use("/api/decision", mlLimiter, decisionRoutes);
 app.use("/api/feedback", mlLimiter, feedbackRoutes);
 app.use("/api/batches", batchRoutes);
+app.use("/api/batch", batchRoutes);
 
 // 6. Deep System Health Check (Database + ML Service + Backend)
 app.get("/api/health", async (req, res) => {

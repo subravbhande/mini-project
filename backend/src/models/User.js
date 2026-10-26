@@ -29,6 +29,20 @@ const userSchema = new mongoose.Schema(
       enum: ['mr', 'en'],
       default: 'mr',
     },
+    preferredMarket: {
+      type: String,
+      trim: true,
+      default: 'Kolhapur',
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    otp: {
+      code: { type: String },
+      expiresAt: { type: Date },
+      purpose: { type: String, enum: ['register', 'reset'] },
+    },
   },
   { timestamps: true }
 );

@@ -1,12 +1,69 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PriceChart from './PriceChart';
 import DayForecastTable from './DayForecastTable';
+import { useAuth } from '../context/AuthContext';
+import { createBatchApi } from '../services/priceApi';
+import {
+  AlertTriangle,
+  Clock,
+  Scale,
+  Zap,
+  Calendar,
+  Target,
+  Star,
+  TrendingUp,
+  BarChart3,
+  Pin,
+  Check,
+  Save,
+  Lock,
+} from 'lucide-react';
 
-export default function PriceAdvisoryResult({ result, lang, theme }) {
+export default function PriceAdvisoryResult({ result, formData, lang, theme, onOpenAuthModal, onBatchSaved }) {
+  const { isAuthenticated } = useAuth();
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const isMr = lang === 'mr';
   const isDark = theme === 'dark';
 
   if (!result) return null;
+
+  // Unpack forecast data safely before handlers
+  const commodity = result.commodity || formData?.commodity || 'Tomato';
+  const market = result.market || formData?.market || 'Kolhapur';
+  const district = result.district || formData?.district || 'Kolhapur';
+
+  const handleSaveBatch = async () => {
+    if (!isAuthenticated) {
+      if (onOpenAuthModal) onOpenAuthModal('login');
+      return;
+    }
+    setSaveLoading(true);
+    setSaveError('');
+    try {
+      const q = result.quantity_quintals || result.quantityQuintals || formData?.quantity_quintals || 50;
+      const st = result.storage_type || result.storageType || formData?.storage_type || 'ambient';
+      const ln = result.liquidity_need || result.liquidityNeed || formData?.liquidity_need || 'normal';
+
+      await createBatchApi({
+        commodity,
+        district,
+        market,
+        variety: 'Standard',
+        quantityQuintals: Number(q),
+        storageType: st,
+        liquidityNeed: ln,
+      });
+      setSaveSuccess(true);
+      if (onBatchSaved) onBatchSaved();
+      setTimeout(() => setSaveSuccess(false), 5000);
+    } catch (err) {
+      setSaveError(err.response?.data?.message || err.message || 'Failed to save batch');
+    } finally {
+      setSaveLoading(false);
+    }
+  };
 
   // Unpack decision fields (from /api/decision/evaluate or ML /decide)
   const decision = result.decision || (result.farmer_summary?.recommendation === 'HOLD_FOR_BEST_PRICE' ? 'HOLD' : 'SELL');
@@ -46,13 +103,9 @@ export default function PriceAdvisoryResult({ result, lang, theme }) {
   const dataAsOf = result.data_as_of || '';
   const daysStale = result.days_stale || 0;
 
-  // Unpack forecast data
-  const commodity = result.commodity || '';
-  const market = result.market || '';
-  const district = result.district || '';
+  // Forecast sub-objects
   const priceForecast = result.price_forecast || result;
   const dailyForecasts = priceForecast.daily_forecasts || [];
-  const farmerSummary = priceForecast.farmer_summary || result.farmer_summary || {};
 
   const todayPrice = dailyForecasts[0]?.predicted_modal_price || 0;
 
@@ -98,7 +151,7 @@ export default function PriceAdvisoryResult({ result, lang, theme }) {
           fontSize: '0.85rem',
           color: 'var(--text-title)'
         }}>
-          <span style={{ fontSize: '1.25rem' }}>⚠️</span>
+          <AlertTriangle size={20} color="var(--text-gold)" style={{ flexShrink: 0 }} />
           <div>
             <strong style={{ color: 'var(--text-gold)' }}>{isMr ? 'बाजार माहिती सावधगिरी:' : 'Market Data Notice:'}</strong>{' '}
             <span style={{ color: 'var(--text-body)' }}>
@@ -133,7 +186,7 @@ export default function PriceAdvisoryResult({ result, lang, theme }) {
             height: '56px',
             borderRadius: '14px',
             background: isDark ? 'rgba(0, 0, 0, 0.35)' : 'rgba(255, 255, 255, 0.8)',
-            border: `1px solid ${varToString('--border-subtle')}`,
+            border: '1px solid var(--border-subtle)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -141,7 +194,7 @@ export default function PriceAdvisoryResult({ result, lang, theme }) {
             boxShadow: 'var(--shadow-toggle)'
           }}
         >
-          {isHold ? '⏳' : isPartial ? '⚖️' : '⚡'}
+          {isHold ? <Clock size={30} color="#10b981" /> : isPartial ? <Scale size={30} color="#f59e0b" /> : <Zap size={30} color="#ef4444" />}
         </div>
 
         <div style={{ flex: 1 }}>
@@ -186,8 +239,9 @@ export default function PriceAdvisoryResult({ result, lang, theme }) {
             {reasonText || (isSell ? (isMr ? 'आजच विक्री करणे फायदेशीर आहे.' : 'Selling today maximizes returns.') : '')}
           </h3>
 
-          <div style={{ fontSize: '0.9rem', color: 'var(--text-body)' }}>
-            📅 <strong>{isMr ? 'कारवाईची अंतिम तारीख (Act By):' : 'Act-By Date:'}</strong>{' '}
+          <div style={{ fontSize: '0.9rem', color: 'var(--text-body)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Calendar size={16} />
+            <span><strong>{isMr ? 'कारवाईची अंतिम तारीख (Act By):' : 'Act-By Date:'}</strong></span>{' '}
             <span style={{ color: 'var(--text-title)', fontWeight: 700 }}>
               {formattedActBy || actByDate || (isMr ? 'आजच' : 'Today')}
             </span>
@@ -206,7 +260,18 @@ export default function PriceAdvisoryResult({ result, lang, theme }) {
         gap: '14px',
         fontSize: '0.88rem'
       }}>
-        <span style={{ fontSize: '1.6rem' }}>🎯</span>
+        <div style={{
+          width: '36px',
+          height: '36px',
+          borderRadius: '8px',
+          background: 'rgba(56, 189, 248, 0.12)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0
+        }}>
+          <Target size={22} color="var(--text-blue)" />
+        </div>
         <div>
           <div style={{ fontWeight: 700, color: 'var(--text-blue)', marginBottom: '2px' }}>
             {isMr ? 'ब्रेक-इव्हन विश्लेषण (Break-Even Requirement)' : 'Holding Break-Even Threshold'}
@@ -275,8 +340,8 @@ export default function PriceAdvisoryResult({ result, lang, theme }) {
           borderRadius: '12px',
           padding: '16px'
         }}>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-emerald)', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 700 }}>
-            ⭐ {isMr ? 'सर्वोत्तम निव्वळ उत्पन्न' : 'Best Projected NRV'}
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-emerald)', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <Star size={14} /> {isMr ? 'सर्वोत्तम निव्वळ उत्पन्न' : 'Best Projected NRV'}
           </div>
           <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-emerald)' }}>
             ₹{Math.round(nrvBest).toLocaleString()}
@@ -293,8 +358,8 @@ export default function PriceAdvisoryResult({ result, lang, theme }) {
           borderRadius: '12px',
           padding: '16px'
         }}>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-gold)', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 700 }}>
-            📈 {isMr ? 'अपेक्षित निव्वळ नफा/तोटा' : 'Net Economic Uplift'}
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-gold)', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <TrendingUp size={14} /> {isMr ? 'अपेक्षित निव्वळ नफा/तोटा' : 'Net Economic Uplift'}
           </div>
           <div style={{ fontSize: '1.5rem', fontWeight: 800, color: upliftPct > 0 ? 'var(--text-emerald)' : (upliftPct < 0 ? 'var(--text-red)' : 'var(--text-title)') }}>
             {formattedUplift}
@@ -311,8 +376,9 @@ export default function PriceAdvisoryResult({ result, lang, theme }) {
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <div>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-title)' }}>
-              📊 {isMr ? '१ ते ५ दिवसांचा भाव अंदाज व अनिश्चितता पट्टा' : '1 to 5 Day Price Forecast & Uncertainty Bands'}
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-title)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <BarChart3 size={18} color="var(--text-emerald)" />
+              <span>{isMr ? '१ ते ५ दिवसांचा भाव अंदाज व अनिश्चितता पट्टा' : '1 to 5 Day Price Forecast & Uncertainty Bands'}</span>
             </h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
               {isMr
@@ -323,10 +389,85 @@ export default function PriceAdvisoryResult({ result, lang, theme }) {
         </div>
 
         <PriceChart dailyForecasts={dailyForecasts} bestSellDate={actByDate} lang={lang} theme={theme} />
+        <DayForecastTable dailyForecasts={dailyForecasts} bestSellDate={actByDate} lang={lang} theme={theme} />
       </div>
 
-      {/* Day by Day Details Table */}
-      <DayForecastTable dailyForecasts={dailyForecasts} bestSellDate={actByDate} lang={lang} theme={theme} />
+      {/* Save to Farmer History Action Card */}
+      <div style={{
+        background: isDark ? 'rgba(16, 185, 129, 0.08)' : 'rgba(16, 185, 129, 0.06)',
+        border: `1px solid ${isDark ? 'rgba(16, 185, 129, 0.28)' : 'rgba(16, 185, 129, 0.32)'}`,
+        borderRadius: '14px',
+        padding: '18px 20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '14px'
+      }}>
+        <div style={{ flex: '1 1 300px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <Pin size={18} color="var(--text-emerald)" />
+            <span style={{ fontWeight: 700, fontSize: '0.98rem', color: 'var(--text-title)' }}>
+              {isMr ? 'हा सल्ला ट्रॅक करण्यासाठी इतिहासामध्ये जोडा' : 'Track this Advisory in Your History'}
+            </span>
+          </div>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
+            {isMr
+              ? 'दररोजच्या भावातील बदल, साठवणूक घट आणि प्रत्यक्ष विक्री नोंदवून तुमचा निव्वळ नफा ट्रॅक करा.'
+              : 'Save this crop batch to monitor daily holding recommendations and log actual sales to verify your financial uplift.'}
+          </p>
+          {saveSuccess && (
+            <div style={{ marginTop: '8px', color: 'var(--text-emerald)', fontSize: '0.84rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Check size={16} />
+              <span>{isMr ? 'शेतमाल तुकडी यशस्वीरीत्या जोडली! "माझा इतिहास" टॅबमध्ये तपासा.' : 'Batch successfully saved! Check the "My History" tab.'}</span>
+            </div>
+          )}
+          {saveError && (
+            <div style={{ marginTop: '8px', color: 'var(--text-red)', fontSize: '0.84rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <AlertTriangle size={16} />
+              <span>{saveError}</span>
+            </div>
+          )}
+        </div>
+
+        <div>
+          <button
+            type="button"
+            id="save-to-batches-btn"
+            onClick={handleSaveBatch}
+            disabled={saveLoading || saveSuccess}
+            style={{
+              background: 'var(--emerald-gradient)',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '10px',
+              padding: '10px 20px',
+              fontSize: '0.88rem',
+              fontWeight: 700,
+              cursor: saveLoading || saveSuccess ? 'default' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
+              opacity: saveLoading ? 0.7 : 1,
+              transition: 'transform 0.15s ease',
+            }}
+          >
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              {saveLoading ? <Clock size={16} className="loading-spinner" /> : saveSuccess ? <Check size={16} /> : isAuthenticated ? <Save size={16} /> : <Lock size={16} />}
+            </span>
+            <span>
+              {saveLoading
+                ? (isMr ? 'जतन करत आहे...' : 'Saving...')
+                : saveSuccess
+                  ? (isMr ? 'जतन केले!' : 'Saved!')
+                  : isAuthenticated
+                    ? (isMr ? 'माझ्या इतिहासामध्ये सेव्ह करा' : 'Save to My Batches')
+                    : (isMr ? 'लॉगिन करून सेव्ह करा' : 'Sign in to Track')}
+            </span>
+          </button>
+        </div>
+      </div>
 
       {/* Model Tech Badge Footer */}
       <div style={{
@@ -347,8 +488,4 @@ export default function PriceAdvisoryResult({ result, lang, theme }) {
       </div>
     </div>
   );
-}
-
-function varToString(v) {
-  return `var(${v})`;
 }

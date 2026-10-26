@@ -35,8 +35,12 @@ router.post("/forecast", async (req, res) => {
     });
   }
 
+  const normCommodity = commodity
+    ? (String(commodity).trim().charAt(0).toUpperCase() + String(commodity).trim().slice(1).toLowerCase())
+    : "";
+
   const validCommodities = ["Tomato", "Onion"];
-  if (!validCommodities.includes(commodity)) {
+  if (!validCommodities.includes(normCommodity)) {
     return res.status(400).json({
       success: false,
       error: `commodity must be one of: ${validCommodities.join(", ")}`,
@@ -55,7 +59,7 @@ router.post("/forecast", async (req, res) => {
     }
 
     const forecast = await mlClient.getPriceForecast({
-      commodity,
+      commodity: normCommodity,
       market,
       district,
       quantity_quintals: quantity_quintals ? parseFloat(quantity_quintals) : 0,
