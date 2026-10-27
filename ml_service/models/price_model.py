@@ -280,11 +280,17 @@ class PriceModel:
 
         # Determine cutoff date (as_of)
         latest_report_date = s_df["date"].max()
+        today_ts = pd.to_datetime(date.today()).tz_localize(None)
+
         if as_of is None:
-            if weather_forecast and len(weather_forecast) > 0 and weather_forecast[0].get("date"):
-                as_of_ts = pd.to_datetime(weather_forecast[0]["date"]).tz_localize(None) - pd.Timedelta(days=1)
+            if latest_report_date >= today_ts:
+                # We have today's live/recorded mandi price in dataset
+                as_of_ts = today_ts
+            elif weather_forecast and len(weather_forecast) > 0 and weather_forecast[0].get("date"):
+                # Dataset only has up to yesterday; forecast starts from today
+                as_of_ts = min(latest_report_date, pd.to_datetime(weather_forecast[0]["date"]).tz_localize(None) - pd.Timedelta(days=1))
             else:
-                as_of_ts = pd.to_datetime(date.today())
+                as_of_ts = min(latest_report_date, today_ts)
         else:
             as_of_ts = pd.to_datetime(as_of).tz_localize(None)
 

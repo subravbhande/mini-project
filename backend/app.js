@@ -1,4 +1,6 @@
-require("dotenv").config(); // Reloads environment variables including FAST2SMS_API_KEY
+const path = require("path");
+require("dotenv").config({ path: path.resolve(__dirname, ".env") });
+
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -11,7 +13,9 @@ const batchRoutes = require("./src/routes/batchRoutes");
 const decisionRoutes = require("./src/routes/decisionRoutes");
 const priceRoutes = require("./src/routes/priceRoutes");
 const feedbackRoutes = require("./src/routes/feedbackRoutes");
+const assistantRoutes = require("./src/routes/assistantRoutes");
 const mlClient = require("./src/services/mlClient");
+
 const { initDailyPriceSyncJob } = require("./src/jobs/dailyPriceSyncJob");
 
 const app = express();
@@ -31,8 +35,11 @@ app.use(
 );
 
 // 2. Controlled CORS policy
+const configuredOrigin = process.env.CLIENT_ORIGIN
+  ? process.env.CLIENT_ORIGIN.split(",").map((s) => s.trim())
+  : [];
 const allowedOrigins = [
-  process.env.CLIENT_ORIGIN || "http://localhost:5173",
+  ...configuredOrigin,
   "http://localhost:5173",
   "http://127.0.0.1:5173",
   "http://localhost:3000",
@@ -43,7 +50,12 @@ app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps, curl, backend scripts)
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin) return callback(null, true);
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.endsWith(".vercel.app") ||
+        origin.endsWith(".onrender.com")
+      ) {
         return callback(null, true);
       }
       return callback(new Error("CORS policy violation: origin not allowed"));
@@ -91,7 +103,9 @@ app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/price", mlLimiter, priceRoutes);
 app.use("/api/decision", mlLimiter, decisionRoutes);
 app.use("/api/feedback", mlLimiter, feedbackRoutes);
+app.use("/api/assistant", assistantRoutes);
 app.use("/api/batches", batchRoutes);
+
 app.use("/api/batch", batchRoutes);
 
 // 6. Deep System Health Check (Database + ML Service + Backend)

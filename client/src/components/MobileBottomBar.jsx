@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { BarChart3, ClipboardList, Sun, Moon, Globe, User } from 'lucide-react';
+import { BarChart3, ClipboardList, Sun, Moon, Globe, User, Bot } from 'lucide-react';
 
 export default function MobileBottomBar({
   currentView = 'advisory',
@@ -10,6 +10,7 @@ export default function MobileBottomBar({
   theme = 'dark',
   toggleTheme,
   onOpenAuthModal,
+  onOpenAiAssistant,
 }) {
   const { user, isAuthenticated } = useAuth();
   const isMr = lang === 'mr';
@@ -48,6 +49,19 @@ export default function MobileBottomBar({
         <ClipboardList size={20} />
         <span>{isMr ? 'इतिहास' : 'History'}</span>
       </button>
+
+      {/* 3. AI Assistant */}
+      <button
+        type="button"
+        onClick={onOpenAiAssistant}
+        className="mobile-dock-btn"
+        style={{ color: 'var(--text-emerald)' }}
+        title="AI Assistant"
+      >
+        <Bot size={20} />
+        <span style={{ fontWeight: 800 }}>{isMr ? 'AI मित्र' : 'AI Assistant'}</span>
+      </button>
+
 
       {/* 3. Language Switch */}
       <button

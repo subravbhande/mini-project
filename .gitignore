@@ -19,7 +19,7 @@ __pycache__/
 **/prediction_logs.json
 **/feedback_evaluations.json
 
-data/raw/
+**/data/raw/
 artifacts/*.pkl
 .DS_Store
 dist/

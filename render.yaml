@@ -1,0 +1,59 @@
+services:
+  # =============================================================
+  # 1. AgriSense ML Microservice (FastAPI + XGBoost)
+  # =============================================================
+  - type: web
+    name: agrisense-ml-service
+    env: python
+    rootDir: ml_service
+    plan: free
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: MONGO_URI
+        sync: false
+      - key: OPENWEATHER_API_KEY
+        sync: false
+      - key: DATA_GOV_IN_API_KEY
+        sync: false
+      - key: DATA_GOV_IN_RESOURCE_ID
+        value: 35985678-0d79-46b4-9ed6-6f13308a1d24
+
+  # =============================================================
+  # 2. AgriSense Node.js / Express Backend
+  # =============================================================
+  - type: web
+    name: agrisense-backend
+    env: node
+    rootDir: backend
+    plan: free
+    region: singapore
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ML_SERVICE_URL
+        fromService:
+          type: web
+          name: agrisense-ml-service
+          property: host
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: OPENWEATHER_API_KEY
+        sync: false
+      - key: DATA_GOV_IN_API_KEY
+        sync: false
+      - key: CLIENT_ORIGIN
+        sync: false

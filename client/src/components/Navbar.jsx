@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Sprout, BarChart3, ClipboardList, Lock, User, LogOut, Sun, Moon, ChevronDown } from 'lucide-react';
+import { Sprout, BarChart3, ClipboardList, Lock, User, LogOut, Sun, Moon, ChevronDown, Bot, Sparkles } from 'lucide-react';
 
 export default function Navbar({
   lang,
@@ -11,6 +11,7 @@ export default function Navbar({
   currentView = 'advisory',
   setCurrentView,
   onOpenAuthModal,
+  onOpenAiAssistant,
 }) {
   const { user, isAuthenticated, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -137,8 +138,44 @@ export default function Navbar({
           </button>
         </div>
 
-        {/* Right side controls (User, Theme, Language) */}
+        {/* Right side controls (AI Assistant, User, Theme, Language) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* AI Assistant Button (Top Right) */}
+          <button
+            type="button"
+            id="nav-ai-assistant-btn"
+            onClick={onOpenAiAssistant}
+            className="nav-ai-assistant-btn"
+            title={isMr ? 'AI कृषी मित्र (शेतकरी सहाय्यक - ऑडिओ सह)' : 'AI Farmer Assistant (with Voice Agent)'}
+            style={{
+              background: 'linear-gradient(135deg, rgba(131, 170, 70, 0.2) 0%, rgba(65, 97, 27, 0.35) 100%)',
+              color: 'var(--text-emerald)',
+              border: '1.5px solid var(--border-highlight)',
+              borderRadius: '10px',
+              padding: '6px 12px',
+              fontSize: '0.82rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 2px 10px rgba(131, 170, 70, 0.25)',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <Bot size={16} />
+            <span className="ai-btn-text">{isMr ? 'AI कृषी मित्र' : 'AI Assistant'}</span>
+            <span
+              style={{
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                background: '#22c55e',
+                boxShadow: '0 0 6px #22c55e',
+              }}
+            />
+          </button>
+
           {/* Auth Button or User Dropdown */}
           {isAuthenticated ? (
             <div style={{ position: 'relative' }}>

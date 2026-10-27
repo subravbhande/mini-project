@@ -64,7 +64,7 @@ router.post("/forecast", async (req, res) => {
       district,
       quantity_quintals: quantity_quintals ? parseFloat(quantity_quintals) : 0,
       horizon_days: parseInt(horizon_days) || 5,
-      start_date: start_date || null,
+      start_date: start_date || req.body.as_of || null,
       weather_forecast: (liveWeather && liveWeather.length > 0) ? liveWeather : null,
     });
 

@@ -129,6 +129,7 @@ with contextlib.redirect_stdout(sys.stderr):
             "reason": economic_res.reason,
             "reason_mr": economic_res.reason_mr,
             "data_as_of": price_res.data_as_of,
+            "last_observed_price": round(float(price_dict.get("summary", {}).get("last_observed_price", 0.0)), 2),
             "days_stale": price_res.days_stale,
             "stale": price_res.stale,
             "warnings": decay_res.warnings,

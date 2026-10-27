@@ -19,6 +19,7 @@ exports.evaluateDirect = async (req, res) => {
       storage_type: storageType || 'ambient',
       harvest_date: harvestDate || undefined,
       liquidity_need: liquidityNeed || 'normal',
+      as_of: req.body.as_of || req.body.start_date || undefined,
     });
 
     res.json({ success: true, data: mlDecision });

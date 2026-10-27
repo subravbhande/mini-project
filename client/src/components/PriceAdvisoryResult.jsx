@@ -104,7 +104,12 @@ export default function PriceAdvisoryResult({ result, formData, lang, theme, onO
   // Forecast sub-objects
   const priceForecast = result.price_forecast || result;
   const dailyForecasts = priceForecast.daily_forecasts || [];
-  const todayPrice = dailyForecasts[0]?.predicted_modal_price || 0;
+  const todayPrice =
+    result.last_observed_price ||
+    result.price_forecast?.summary?.last_observed_price ||
+    dailyForecasts[0]?.predicted_modal_price ||
+    0;
+
 
   // Decision themes
   const isHold = decision === 'HOLD';

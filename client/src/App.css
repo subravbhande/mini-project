@@ -52,3 +52,36 @@
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   }
 }
+
+/* ──────────────────────────────────────────
+   AI Chatbot FAB + Widget Responsive Rules
+─────────────────────────────────────────── */
+@keyframes fabPop {
+  from { opacity: 0; transform: scale(0.6) translateY(16px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Hide FAB label text on small mobile — show only icon */
+@media (max-width: 400px) {
+  .fab-label { display: none; }
+}
+
+/* Move FAB above mobile bottom dock so it doesn't overlap */
+@media (max-width: 768px) {
+  #floating-ai-assistant-btn {
+    bottom: 72px !important; /* above mobile dock */
+    right: 12px !important;
+    padding: 11px 14px !important;
+  }
+  #agri-chatbot-box {
+    bottom: 128px !important; /* above FAB + dock */
+  }
+}
+
+/* On desktop, AI assistant button in navbar is full label */
+.nav-ai-assistant-btn:hover {
+  transform: translateY(-1px);
+  border-color: var(--text-emerald) !important;
+}
+
+

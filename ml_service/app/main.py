@@ -338,6 +338,21 @@ def get_timing_decision(req: DecisionRequest):
             weather_forecast=weather_fc,
         )
         price_dict = price_res.to_dict()
+        daily = price_dict.get("daily_forecasts", [])
+        if daily:
+            for d in daily:
+                d["predicted_min_price"] = d.get("typical_daily_spread_min") or d.get("confidence_band_low") or round(d["predicted_modal_price"] * 0.95, 2)
+                d["predicted_max_price"] = d.get("typical_daily_spread_max") or d.get("confidence_band_high") or round(d["predicted_modal_price"] * 1.05, 2)
+                w_info = d.get("weather")
+                if not isinstance(w_info, dict) or not w_info.get("temp_max_c"):
+                    temp_max = d.get("temp_c") if d.get("temp_c") is not None else 25.0
+                    precip = d.get("precipitation_mm") if d.get("precipitation_mm") is not None else (25.0 if d.get("weather_risk_flag") else 0.0)
+                    humidity = d.get("humidity_pct") if d.get("humidity_pct") is not None else 70.0
+                    d["weather"] = {
+                        "temp_max_c": round(float(temp_max), 1),
+                        "precipitation_mm": round(float(precip), 1),
+                        "humidity_pct": round(float(humidity), 1),
+                    }
 
         # 2. Decay Simulation
         decay_res = decay_model.simulate(
@@ -389,6 +404,7 @@ def get_timing_decision(req: DecisionRequest):
             "reason": economic_res.reason,
             "reason_mr": economic_res.reason_mr,
             "data_as_of": price_res.data_as_of,
+            "last_observed_price": round(float(price_dict.get("summary", {}).get("last_observed_price", 0.0)), 2),
             "days_stale": price_res.days_stale,
             "stale": price_res.stale,
             "warnings": decay_res.warnings,

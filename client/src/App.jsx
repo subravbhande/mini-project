@@ -6,18 +6,22 @@ import PriceAdvisoryResult from './components/PriceAdvisoryResult';
 import FarmerHistoryView from './components/FarmerHistoryView';
 import AuthModal from './components/AuthModal';
 import AgriLoader from './components/AgriLoader';
+import AiAssistantDrawer from './components/AiAssistantDrawer';
 import { useAuth } from './context/AuthContext';
 import { fetchMarkets, fetchPriceForecast, evaluateTimingDecision, fetchHealth } from './services/priceApi';
-import { Lock, Wheat, AlertTriangle, Sprout } from 'lucide-react';
+import { Lock, Wheat, AlertTriangle, Sprout, Bot, Sparkles } from 'lucide-react';
 import './App.css';
+
 
 function App() {
   const { user, isAuthenticated } = useAuth();
   const [currentView, setCurrentView] = useState('advisory'); // 'advisory' | 'history'
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState('login'); // 'login' | 'register' | 'forgot'
+  const [assistantOpen, setAssistantOpen] = useState(false);
 
-  const [lang, setLang] = useState('en');
+  const [lang, setLang] = useState('mr'); // default to Marathi for farmer accessibility
+
   const [theme, setTheme] = useState(() => {
     try {
       const saved = localStorage.getItem('agrisense_theme');
@@ -178,7 +182,9 @@ function App() {
         currentView={currentView}
         setCurrentView={setCurrentView}
         onOpenAuthModal={openAuthModal}
+        onOpenAiAssistant={() => setAssistantOpen(true)}
       />
+
 
       <main className="app-main-container">
         {/* VIEW 1: FARMER HISTORY & PORTFOLIO */}
@@ -363,7 +369,62 @@ function App() {
         theme={theme}
         toggleTheme={toggleTheme}
         onOpenAuthModal={openAuthModal}
+        onOpenAiAssistant={() => setAssistantOpen(true)}
       />
+
+      {/* AI Assistant Floating Chatbot Widget */}
+      <AiAssistantDrawer
+        isOpen={assistantOpen}
+        onClose={() => setAssistantOpen(false)}
+        lang={lang}
+        setLang={setLang}
+        theme={theme}
+        formData={{ ...formData, activeResult: result }}
+      />
+
+
+      {/* ── Floating Chatbot FAB (bottom-right, all devices) ── */}
+      {!assistantOpen && (
+        <button
+          type="button"
+          id="floating-ai-assistant-btn"
+          onClick={() => setAssistantOpen(true)}
+          title={isMr ? 'AI कृषी मित्र खोला' : 'Open AI Agri Assistant'}
+          style={{
+            position: 'fixed',
+            bottom: '20px',
+            right: '20px',
+            zIndex: 9998,
+            background: 'var(--emerald-gradient)',
+            color: '#ffffff',
+            border: '2px solid rgba(255,255,255,0.2)',
+            borderRadius: '50px',
+            padding: '12px 18px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            boxShadow: '0 8px 28px rgba(65,97,27,0.5), 0 0 0 1px rgba(255,255,255,0.15), 0 0 20px rgba(131,170,70,0.25)',
+            cursor: 'pointer',
+            fontWeight: 800,
+            fontSize: '0.84rem',
+            fontFamily: 'inherit',
+            transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+            animation: 'fabPop 0.4s cubic-bezier(0.34,1.56,0.64,1)',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px) scale(1.04)'; e.currentTarget.style.boxShadow = '0 12px 32px rgba(65,97,27,0.6), 0 0 0 1px rgba(255,255,255,0.2)'; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(65,97,27,0.5), 0 0 0 1px rgba(255,255,255,0.15), 0 0 20px rgba(131,170,70,0.25)'; }}
+        >
+          <Bot size={19} />
+          <span className="fab-label">{isMr ? 'AI कृषी मित्र' : 'AI Assistant'}</span>
+          <span style={{
+            width: '8px', height: '8px',
+            borderRadius: '50%',
+            background: '#4ade80',
+            boxShadow: '0 0 8px #4ade80',
+          }} />
+        </button>
+      )}
+
 
       {/* Footer (Desktop & Tablet only) */}
       <footer className="desktop-footer" style={{
