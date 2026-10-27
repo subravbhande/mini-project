@@ -1,6 +1,12 @@
 import axios from "axios";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const LIVE_BACKEND_URL = "https://agrisense-backend-7pza.onrender.com";
+
+const BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  (typeof window !== "undefined" && window.location.hostname.includes("vercel.app")
+    ? LIVE_BACKEND_URL
+    : "http://localhost:5000");
 
 const api = axios.create({
   baseURL: BASE_URL,
