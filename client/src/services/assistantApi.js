@@ -2,8 +2,13 @@ import axios from "axios";
 
 const LIVE_BACKEND_URL = "https://agrisense-backend-7pza.onrender.com";
 
+let configuredUrl = import.meta.env.VITE_API_URL || "";
+if (configuredUrl.includes("ml-service")) {
+  configuredUrl = LIVE_BACKEND_URL;
+}
+
 const BASE_URL =
-  import.meta.env.VITE_API_URL ||
+  configuredUrl ||
   (typeof window !== "undefined" && window.location.hostname.includes("vercel.app")
     ? LIVE_BACKEND_URL
     : "http://localhost:5000");
