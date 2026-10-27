@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
+import MobileBottomBar from './components/MobileBottomBar';
 import PriceQueryForm from './components/PriceQueryForm';
 import PriceAdvisoryResult from './components/PriceAdvisoryResult';
 import FarmerHistoryView from './components/FarmerHistoryView';
 import AuthModal from './components/AuthModal';
+import AgriLoader from './components/AgriLoader';
 import { useAuth } from './context/AuthContext';
 import { fetchMarkets, fetchPriceForecast, evaluateTimingDecision, fetchHealth } from './services/priceApi';
 import { Lock, Wheat, AlertTriangle, Sprout } from 'lucide-react';
+import './App.css';
 
 function App() {
   const { user, isAuthenticated } = useAuth();
@@ -87,7 +90,6 @@ function App() {
     setError(null);
 
     try {
-      // Primary: call combined economic decision engine (Price + Shelf-life + Storage + Liquidity)
       const data = await evaluateTimingDecision({
         commodity: formData.commodity.toLowerCase(),
         market: formData.market,
@@ -122,7 +124,7 @@ function App() {
     }
   };
 
-  // Run initial forecast automatically once on mount so user sees live advisory
+  // Run initial forecast automatically once on mount
   useEffect(() => {
     let active = true;
     async function runInitial() {
@@ -165,7 +167,8 @@ function App() {
   const isMr = lang === 'mr';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative' }}>
+      {/* Top Navbar */}
       <Navbar
         lang={lang}
         setLang={setLang}
@@ -177,7 +180,7 @@ function App() {
         onOpenAuthModal={openAuthModal}
       />
 
-      <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '28px 24px', flex: 1, width: '100%' }}>
+      <main className="app-main-container">
         {/* VIEW 1: FARMER HISTORY & PORTFOLIO */}
         {currentView === 'history' ? (
           isAuthenticated ? (
@@ -188,35 +191,37 @@ function App() {
               onNavigateAdvisory={() => setCurrentView('advisory')}
             />
           ) : (
-            <div className="glass-card" style={{ maxWidth: '640px', margin: '40px auto', padding: '36px', textAlign: 'center' }}>
+            <div className="glass-card" style={{ maxWidth: '600px', margin: '30px auto', padding: 'clamp(24px, 5vw, 40px)', textAlign: 'center' }}>
               <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
-                <Lock size={48} color="var(--text-emerald)" />
+                <div style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '18px',
+                  background: 'var(--bg-pill)',
+                  border: '1.5px solid var(--border-highlight)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <Lock size={32} color="var(--accent-green)" />
+                </div>
               </div>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-title)', marginBottom: '12px' }}>
+              <h2 style={{ fontSize: 'clamp(1.2rem, 3.5vw, 1.5rem)', fontWeight: 800, color: 'var(--text-title)', marginBottom: '10px' }}>
                 {isMr ? 'आपला शेतकरी इतिहास पाहण्यासाठी लॉगिन करा' : 'Sign In to View Your History'}
               </h2>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '24px' }}>
+              <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '22px' }}>
                 {isMr
                   ? 'मागील सल्ले, सध्या साठवून ठेवलेला शेतमाल आणि प्रत्यक्ष विक्रीतून मिळालेला एकूण निव्वळ नफा ट्रॅक करण्यासाठी आपल्या मोबाईल नंबरने लॉगिन करा.'
                   : 'Log in with your mobile number to view active harvest holding batches, daily advice, and lifetime economic uplift from optimized sale timing.'}
               </p>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
                 <button
                   type="button"
                   onClick={() => openAuthModal('login')}
-                  style={{
-                    background: 'var(--emerald-gradient)',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '10px',
-                    padding: '12px 24px',
-                    fontWeight: 700,
-                    fontSize: '0.9rem',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
-                  }}
+                  className="btn-primary"
+                  style={{ padding: '12px 22px', fontSize: '0.88rem' }}
                 >
-                  {isMr ? 'लॉगिन करा / नवीन खाते' : 'Sign In / Register'}
+                  {isMr ? 'लॉगिन / नवीन खाते' : 'Sign In / Register'}
                 </button>
                 <button
                   type="button"
@@ -225,82 +230,60 @@ function App() {
                     background: 'var(--bg-subtle)',
                     border: '1px solid var(--border-subtle)',
                     color: 'var(--text-title)',
-                    borderRadius: '10px',
-                    padding: '12px 24px',
-                    fontWeight: 600,
-                    fontSize: '0.9rem',
+                    borderRadius: '12px',
+                    padding: '12px 20px',
+                    fontWeight: 700,
+                    fontSize: '0.88rem',
                     cursor: 'pointer',
                   }}
                 >
-                  {isMr ? '← बाजारभाव सल्ल्यावर परत जा' : '← Back to Public Advisory'}
+                  {isMr ? '← सल्ल्यावर परत जा' : '← Back to Advisory'}
                 </button>
               </div>
             </div>
           )
         ) : (
-          /* VIEW 2: PUBLIC PRICE ADVISORY (NO LOGIN REQUIRED) */
+          /* VIEW 2: PUBLIC PRICE ADVISORY */
           <>
             {/* Hero Intro */}
-            <div style={{ textAlign: 'center', marginBottom: '32px', maxWidth: '840px', margin: '0 auto 32px' }}>
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: 'rgba(16, 185, 129, 0.12)',
-                border: '1px solid rgba(16, 185, 129, 0.35)',
-                borderRadius: '20px',
-                padding: '6px 18px',
-                fontSize: '0.82rem',
-                color: 'var(--text-emerald)',
-                fontWeight: 700,
-                marginBottom: '14px'
-              }}>
-                <Wheat size={16} />
-                <span>
-                  {isMr ? 'शेतकऱ्यांसाठी AI निर्णय सहाय्यक — तोटा टाळा, नफा वाढवा' : 'Distress-Sale Timing Advisor • Price & Spoilage Optimization'}
-                </span>
-              </div>
+            <div style={{ textAlign: 'center', marginBottom: '28px', maxWidth: '820px', margin: '0 auto 28px' }}>
 
-              <h1 style={{
-                fontSize: '2.5rem',
-                fontWeight: 800,
-                letterSpacing: '-0.03em',
-                color: 'var(--text-title)',
-                marginBottom: '12px',
-                lineHeight: 1.2
-              }}>
+
+              <h1 className="hero-title">
                 {isMr ? (
-                  <>शेतमाल आज विकावा की <span style={{ color: 'var(--text-emerald)' }}>राखून ठेवावा?</span></>
+                  <>शेतमाल आज विकावा की <span style={{ color: 'var(--accent-green)' }}>राखून ठेवावा?</span></>
                 ) : (
-                  <>Sell Today or <span style={{ color: 'var(--text-emerald)' }}>Hold for Better Rates?</span></>
+                  <>Sell Today or <span style={{ color: 'var(--accent-green)' }}>Hold for Better Rates?</span></>
                 )}
               </h1>
 
-              <p style={{ fontSize: '1.02rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+              <p className="hero-subtitle">
                 {isMr
                   ? 'थेट १ ते ५ दिवसांचे बाजारभाव अंदाज, नैसर्गिक घट, साठवणूक खर्च आणि ब्रेक-इव्हन विश्लेषणाचा अभ्यास करून शेतकऱ्यांना अचूक विक्री सल्ला.'
-                  : 'Our decision engine combines leak-free direct multi-step price forecasts, dynamic crop spoilage modeling, and holding break-even analysis to recommend optimal sale timing.'}
+                  : 'Direct multi-step price forecasts, dynamic crop spoilage decay, and holding break-even analysis to recommend optimal APMC sale timing.'}
               </p>
             </div>
 
             {/* Error Notification */}
             {error && (
               <div style={{
-                maxWidth: '1000px',
-                margin: '0 auto 24px',
+                maxWidth: '900px',
+                margin: '0 auto 20px',
                 background: 'rgba(239, 68, 68, 0.12)',
                 border: '1px solid rgba(239, 68, 68, 0.35)',
-                borderRadius: '12px',
-                padding: '16px 20px',
+                borderRadius: '14px',
+                padding: '14px 18px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '10px',
                 color: 'var(--text-red)'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <AlertTriangle size={20} />
-                  <div>
-                    <strong>{isMr ? 'त्रुटी (Error):' : 'Error:'}</strong> {error}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+                  <div style={{ fontSize: '0.86rem' }}>
+                    <strong>{isMr ? 'त्रुटी:' : 'Error:'}</strong> {error}
                   </div>
                 </div>
                 <button
@@ -311,7 +294,7 @@ function App() {
                     color: 'var(--text-red)',
                     borderRadius: '8px',
                     padding: '6px 14px',
-                    fontSize: '0.8rem',
+                    fontSize: '0.78rem',
                     cursor: 'pointer',
                     fontWeight: 700
                   }}
@@ -322,13 +305,7 @@ function App() {
             )}
 
             {/* Main Content Grid: Form (Left) & Results (Right) */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: result ? '380px 1fr' : 'minmax(320px, 600px)',
-              justifyContent: result ? 'stretch' : 'center',
-              gap: '24px',
-              alignItems: 'start'
-            }}>
+            <div className={`content-grid ${result ? 'has-result' : 'no-result'}`}>
               {/* Query Form Column */}
               <div>
                 <PriceQueryForm
@@ -343,18 +320,20 @@ function App() {
               </div>
 
               {/* Results Column */}
-              {result && (
-                <div>
+              <div>
+                {loading && !result ? (
+                  <AgriLoader lang={lang} />
+                ) : result ? (
                   <PriceAdvisoryResult
                     result={result}
                     formData={formData}
                     lang={lang}
                     theme={theme}
                     onOpenAuthModal={openAuthModal}
-                    onBatchSaved={() => {}}
+                    onBatchSaved={() => { }}
                   />
-                </div>
-              )}
+                ) : null}
+              </div>
             </div>
           </>
         )}
@@ -369,28 +348,38 @@ function App() {
         theme={theme}
         onSuccess={() => {
           setAuthModalOpen(false);
-          // If user logged in while clicking history, take them to history view
           if (authModalMode === 'login' || authModalMode === 'register') {
             setCurrentView('history');
           }
         }}
       />
 
-      {/* Footer */}
-      <footer style={{
+      {/* Mobile Bottom Navigation Dock */}
+      <MobileBottomBar
+        currentView={currentView}
+        setCurrentView={setCurrentView}
+        lang={lang}
+        setLang={setLang}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        onOpenAuthModal={openAuthModal}
+      />
+
+      {/* Footer (Desktop & Tablet only) */}
+      <footer className="desktop-footer" style={{
         borderTop: '1px solid var(--border-subtle)',
         background: 'var(--bg-footer)',
         backdropFilter: 'blur(10px)',
-        padding: '20px 24px',
+        padding: '18px 20px',
         textAlign: 'center',
-        fontSize: '0.8rem',
+        fontSize: '0.78rem',
         color: 'var(--text-muted)',
-        marginTop: '40px'
+        marginTop: 'auto',
       }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
           <span style={{ color: 'var(--text-body)', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <Sprout size={16} color="var(--text-emerald)" />
-            <strong>Distress-Sale Timing Advisor</strong> — Decision Support System for Farmers
+            <Sprout size={15} color="var(--accent-green)" />
+            <strong>Distress-Sale Timing Advisor</strong> — Decision Support for Farmers
           </span>
           <span>Kolhapur & Sangli APMC Mandis • Climatology & Multi-Step Machine Learning</span>
         </div>

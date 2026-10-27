@@ -7,8 +7,8 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
   const isDark = theme === 'dark';
   const { login, register, sendOtp, resetPin } = useAuth();
 
-  const [mode, setMode] = useState(initialMode); // 'login' | 'register' | 'forgot'
-  const [step, setStep] = useState(1); // 1: phone input, 2: OTP + PIN
+  const [mode, setMode] = useState(initialMode);
+  const [step, setStep] = useState(1);
 
   // Form fields
   const [phone, setPhone] = useState('');
@@ -45,7 +45,6 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
     setDevOtp('');
   };
 
-  // Step 1: Send OTP for register or forgot PIN
   const handleSendOtp = async (e) => {
     e?.preventDefault();
     setError('');
@@ -66,7 +65,7 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
     try {
       const res = await sendOtp(cleanPhone, mode === 'forgot' ? 'reset' : 'register');
       setStep(2);
-      setSuccessMsg(isMr ? 'पडताळणी कोड (OTP) खालीलप्रमाणे तयार झाला आहे.' : 'Verification OTP generated below.');
+      setSuccessMsg(isMr ? 'पडताळणी कोड (OTP) खाली तयार झाला आहे.' : 'Verification OTP generated below.');
       if (res.devOtp) {
         setDevOtp(res.devOtp);
       }
@@ -77,7 +76,6 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
     }
   };
 
-  // Step 2: Handle Registration with OTP + PIN
   const handleRegisterSubmit = async (e) => {
     e?.preventDefault();
     setError('');
@@ -117,7 +115,6 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
     }
   };
 
-  // Step 2: Handle Forgot PIN Reset
   const handleResetSubmit = async (e) => {
     e?.preventDefault();
     setError('');
@@ -154,7 +151,6 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
     }
   };
 
-  // Handle Standard Login
   const handleLoginSubmit = async (e) => {
     e?.preventDefault();
     setError('');
@@ -183,198 +179,166 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100vw',
-      height: '100vh',
-      background: 'rgba(0, 0, 0, 0.65)',
-      backdropFilter: 'blur(8px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 9999,
-      padding: '16px',
-    }}>
+    <div className="modal-backdrop" onClick={onClose}>
       <div
-        className="glass-card"
-        style={{
-          width: '100%',
-          maxWidth: '440px',
-          padding: '30px',
-          borderRadius: '20px',
-          boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
-          position: 'relative',
-          border: `1.5px solid ${isDark ? 'rgba(34, 197, 94, 0.35)' : 'rgba(16, 185, 129, 0.4)'}`,
-        }}
+        className="modal-content-card"
+        onClick={(e) => e.stopPropagation()}
+        style={{ padding: 'clamp(20px, 4vw, 28px)' }}
       >
-        {/* Close Button */}
+        {/* Mobile drag handle */}
+        <div className="sheet-handle" />
+
         <button
           onClick={onClose}
           style={{
             position: 'absolute',
-            top: '18px',
-            right: '18px',
+            top: '16px',
+            right: '16px',
             background: 'none',
             border: 'none',
             color: 'var(--text-muted)',
-            fontSize: '1.25rem',
             cursor: 'pointer',
-            padding: '4px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-        title="Close"
-      >
-        <X size={18} />
-      </button>
+            padding: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          aria-label="Close"
+        >
+          <X size={18} />
+        </button>
 
-      {/* Header Icon & Title */}
-      <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-        <div style={{
-          width: '54px',
-          height: '54px',
-          margin: '0 auto 10px',
-          background: 'rgba(16, 185, 129, 0.15)',
-          border: '1px solid rgba(16, 185, 129, 0.35)',
-          borderRadius: '16px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}>
-          <UserCheck size={28} color="var(--text-emerald)" />
-        </div>
-        <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-title)', marginBottom: '4px' }}>
-          {mode === 'login'
-            ? (isMr ? 'शेतकरी लॉगिन (Farmer Login)' : 'Farmer Login')
-            : mode === 'register'
-              ? (isMr ? 'नवीन खाते नोंदणी (Register)' : 'Create Farmer Account')
-              : (isMr ? 'पिन विसरलात का? (Reset PIN)' : 'Reset PIN')}
-        </h2>
-        <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-          {mode === 'login'
-            ? (isMr ? 'आपला शेतमाल इतिहास पाहण्यासाठी लॉगिन करा' : 'Login to access your harvest history & insights')
-            : mode === 'register'
-              ? (isMr ? 'मोबाईल नंबर आणि OTP द्वारे खाते तयार करा' : 'Fast setup with Mobile OTP and quick PIN')
-              : (isMr ? 'OTP द्वारे नवीन पिन सेट करा' : 'Verify OTP to create a new secure PIN')}
-        </p>
-      </div>
-
-      {/* Error / Success Alerts */}
-      {error && (
-        <div style={{
-          background: 'rgba(239, 68, 68, 0.12)',
-          border: '1px solid rgba(239, 68, 68, 0.35)',
-          color: 'var(--text-red)',
-          padding: '10px 14px',
-          borderRadius: '8px',
-          fontSize: '0.82rem',
-          marginBottom: '16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-        }}>
-          <AlertTriangle size={15} />
-          <span>{error}</span>
-        </div>
-      )}
-
-      {successMsg && (
-        <div style={{
-          background: 'rgba(16, 185, 129, 0.12)',
-          border: '1px solid rgba(16, 185, 129, 0.35)',
-          color: 'var(--text-emerald)',
-          padding: '10px 14px',
-          borderRadius: '8px',
-          fontSize: '0.82rem',
-          marginBottom: '16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-        }}>
-          <CheckCircle2 size={15} />
-          <span>{successMsg}</span>
-        </div>
-      )}
-
-
-      {/* Instant Verification OTP Card */}
-      {devOtp && (
-        <div style={{
-          background: isDark ? 'rgba(16, 185, 129, 0.12)' : 'rgba(16, 185, 129, 0.1)',
-          border: `1px solid ${isDark ? 'rgba(16, 185, 129, 0.35)' : 'rgba(16, 185, 129, 0.4)'}`,
-          borderRadius: '10px',
-          padding: '10px 14px',
-          fontSize: '0.82rem',
-          color: 'var(--text-emerald)',
-          marginBottom: '16px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}>
-          <div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>
-              {isMr ? 'आपला पडताळणी कोड (OTP):' : 'Your Verification OTP:'}
-            </span>
-            <strong style={{ fontSize: '1.25rem', letterSpacing: '0.15em', color: 'var(--text-emerald)' }}>
-              {devOtp}
-            </strong>
+        {/* Header Icon & Title */}
+        <div style={{ textAlign: 'center', marginBottom: '18px' }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            margin: '0 auto 8px',
+            background: 'var(--bg-pill)',
+            border: '1px solid var(--border-highlight)',
+            borderRadius: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <UserCheck size={26} color="var(--accent-green)" />
           </div>
-          <button
-            type="button"
-            onClick={() => setOtp(devOtp)}
-            style={{
-              background: 'var(--emerald-gradient)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '6px 12px',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
-          >
-            {isMr ? 'स्वयं-भरा' : 'Auto-fill'}
-          </button>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-title)', marginBottom: '3px' }}>
+            {mode === 'login'
+              ? (isMr ? 'शेतकरी लॉगिन' : 'Farmer Sign In')
+              : mode === 'register'
+                ? (isMr ? 'नवीन खाते नोंदणी' : 'Create Account')
+                : (isMr ? 'पिन विसरलात का?' : 'Reset PIN')}
+          </h2>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            {mode === 'login'
+              ? (isMr ? 'इतिहास व नफा पाहण्यासाठी लॉगिन करा' : 'Sign in to access your harvest records')
+              : mode === 'register'
+                ? (isMr ? 'मोबाईल नंबर आणि OTP द्वारे खाते तयार करा' : 'Quick signup with mobile OTP')
+                : (isMr ? 'OTP द्वारे नवीन पिन सेट करा' : 'Verify OTP to reset PIN')}
+          </p>
         </div>
-      )}
 
-      {/* ----------------- MODE 1: LOGIN ----------------- */}
-      {mode === 'login' && (
-        <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          <div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
-              <Smartphone size={14} />
-              <span>{isMr ? 'मोबाईल नंबर (10-Digit Mobile)' : 'Mobile Number'}</span>
-            </label>
-            <input
-              type="tel"
-              maxLength={10}
-              placeholder="उदा. 9876543210"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-              required
+        {/* Error / Success Alerts */}
+        {error && (
+          <div style={{
+            background: 'rgba(239, 68, 68, 0.12)',
+            border: '1px solid rgba(239, 68, 68, 0.35)',
+            color: 'var(--text-red)',
+            padding: '10px 14px',
+            borderRadius: '10px',
+            fontSize: '0.8rem',
+            marginBottom: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}>
+            <AlertTriangle size={15} />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {successMsg && (
+          <div style={{
+            background: 'rgba(131, 170, 70, 0.15)',
+            border: '1px solid var(--border-highlight)',
+            color: 'var(--text-emerald)',
+            padding: '10px 14px',
+            borderRadius: '10px',
+            fontSize: '0.8rem',
+            marginBottom: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}>
+            <CheckCircle2 size={15} />
+            <span>{successMsg}</span>
+          </div>
+        )}
+
+        {/* Instant Verification OTP Card */}
+        {devOtp && (
+          <div style={{
+            background: 'var(--bg-pill)',
+            border: '1px solid var(--border-highlight)',
+            borderRadius: '12px',
+            padding: '10px 14px',
+            fontSize: '0.82rem',
+            color: 'var(--text-emerald)',
+            marginBottom: '14px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}>
+            <div>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>
+                {isMr ? 'पडताळणी कोड (OTP):' : 'Verification OTP:'}
+              </span>
+              <strong style={{ fontSize: '1.25rem', letterSpacing: '0.15em', color: 'var(--text-emerald)' }}>
+                {devOtp}
+              </strong>
+            </div>
+            <button
+              type="button"
+              onClick={() => setOtp(devOtp)}
+              className="btn-primary"
               style={{
-                width: '100%',
-                padding: '10px 14px',
-                borderRadius: '10px',
-                background: 'var(--bg-subtle)',
-                border: '1px solid var(--border-subtle)',
-                color: 'var(--text-title)',
-                fontSize: '0.95rem',
-                letterSpacing: '0.04em',
+                padding: '6px 12px',
+                fontSize: '0.76rem',
+                borderRadius: '8px',
               }}
-            />
+            >
+              {isMr ? 'स्वयं-भरा' : 'Auto-fill'}
+            </button>
           </div>
+        )}
 
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-                <Lock size={14} />
-                <span>{isMr ? '४-६ अंकी पिन (Security PIN)' : 'Security PIN'}</span>
+        {/* MODE 1: LOGIN */}
+        {mode === 'login' && (
+          <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '5px' }}>
+                <Smartphone size={14} color="var(--text-emerald)" />
+                <span>{isMr ? 'मोबाईल नंबर' : 'Mobile Number'}</span>
               </label>
+              <input
+                type="tel"
+                maxLength={10}
+                placeholder="उदा. 9876543210"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                required
+                className="input-base"
+                style={{ fontSize: '1.05rem', fontWeight: 600 }}
+              />
+            </div>
+
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                  <Lock size={14} color="var(--text-emerald)" />
+                  <span>{isMr ? 'सुरक्षा पिन' : 'Security PIN'}</span>
+                </label>
                 <button
                   type="button"
                   onClick={() => resetFormState('forgot')}
@@ -382,7 +346,7 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
                     background: 'none',
                     border: 'none',
                     color: 'var(--text-blue)',
-                    fontSize: '0.75rem',
+                    fontSize: '0.74rem',
                     cursor: 'pointer',
                     textDecoration: 'underline',
                   }}
@@ -397,16 +361,8 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
                 value={pin}
                 onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
                 required
-                style={{
-                  width: '100%',
-                  padding: '10px 14px',
-                  borderRadius: '10px',
-                  background: 'var(--bg-subtle)',
-                  border: '1px solid var(--border-subtle)',
-                  color: 'var(--text-title)',
-                  fontSize: '1rem',
-                  letterSpacing: '0.2em',
-                }}
+                className="input-base"
+                style={{ fontSize: '1.1rem', letterSpacing: '0.2em' }}
               />
             </div>
 
@@ -414,23 +370,12 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
               type="submit"
               disabled={loading}
               className="btn-primary"
-              style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: '10px',
-                fontWeight: 700,
-                fontSize: '0.95rem',
-                marginTop: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-              }}
+              style={{ width: '100%', padding: '12px', marginTop: '4px' }}
             >
-              {loading ? (isMr ? 'तपासत आहे...' : 'Logging in...') : (isMr ? 'लॉगिन करा (Login)' : 'Sign In')}
+              {loading ? <span className="loading-spinner" /> : <span>{isMr ? 'लॉगिन करा' : 'Sign In'}</span>}
             </button>
 
-            <div style={{ textAlign: 'center', marginTop: '12px', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+            <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
               {isMr ? 'खाते नाही का?' : "Don't have an account?"}{' '}
               <button
                 type="button"
@@ -439,26 +384,26 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
                   background: 'none',
                   border: 'none',
                   color: 'var(--text-emerald)',
-                  fontWeight: 700,
+                  fontWeight: 800,
                   cursor: 'pointer',
                   textDecoration: 'underline',
                 }}
               >
-                {isMr ? 'नवीन खाते नोंदवा' : 'Register now'}
+                {isMr ? 'नवीन खाते उघडा' : 'Register now'}
               </button>
             </div>
           </form>
         )}
 
-        {/* ----------------- MODE 2: REGISTER ----------------- */}
+        {/* MODE 2: REGISTER */}
         {mode === 'register' && (
           <div>
             {step === 1 ? (
-              <form onSubmit={handleSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <form onSubmit={handleSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
-                    <User size={14} />
-                    <span>{isMr ? 'शेतकऱ्याचे नाव (Farmer Name)' : 'Full Name'}</span>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '5px' }}>
+                    <User size={14} color="var(--text-emerald)" />
+                    <span>{isMr ? 'शेतकऱ्याचे नाव' : 'Full Name'}</span>
                   </label>
                   <input
                     type="text"
@@ -466,22 +411,15 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
-                    style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: '10px',
-                      background: 'var(--bg-subtle)',
-                      border: '1px solid var(--border-subtle)',
-                      color: 'var(--text-title)',
-                      fontSize: '0.95rem',
-                    }}
+                    className="input-base"
+                    style={{ fontSize: '0.95rem' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
-                    <Smartphone size={14} />
-                    <span>{isMr ? 'मोबाईल नंबर (10-Digit Mobile)' : 'Mobile Number'}</span>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '5px' }}>
+                    <Smartphone size={14} color="var(--text-emerald)" />
+                    <span>{isMr ? 'मोबाईल नंबर' : 'Mobile Number'}</span>
                   </label>
                   <input
                     type="tel"
@@ -490,36 +428,21 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
                     required
-                    style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: '10px',
-                      background: 'var(--bg-subtle)',
-                      border: '1px solid var(--border-subtle)',
-                      color: 'var(--text-title)',
-                      fontSize: '0.95rem',
-                      letterSpacing: '0.04em',
-                    }}
+                    className="input-base"
+                    style={{ fontSize: '1.05rem', fontWeight: 600 }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
-                    <MapPin size={14} />
-                    <span>{isMr ? 'जिल्हा (District)' : 'District'}</span>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '5px' }}>
+                    <MapPin size={14} color="var(--text-emerald)" />
+                    <span>{isMr ? 'जिल्हा' : 'District'}</span>
                   </label>
                   <select
                     value={district}
                     onChange={(e) => setDistrict(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: '10px',
-                      background: 'var(--bg-subtle)',
-                      border: '1px solid var(--border-subtle)',
-                      color: 'var(--text-title)',
-                      fontSize: '0.92rem',
-                    }}
+                    className="input-base"
+                    style={{ fontSize: '0.92rem' }}
                   >
                     <option value="Kolhapur">कोल्हापूर (Kolhapur)</option>
                     <option value="Sangli">सांगली (Sangli)</option>
@@ -530,19 +453,12 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
                   type="submit"
                   disabled={loading}
                   className="btn-primary"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    borderRadius: '10px',
-                    fontWeight: 700,
-                    fontSize: '0.95rem',
-                    marginTop: '6px',
-                  }}
+                  style={{ width: '100%', padding: '12px', marginTop: '4px' }}
                 >
-                  {loading ? (isMr ? 'OTP पाठवत आहे...' : 'Sending OTP...') : (isMr ? 'OTP पाठवा (Send OTP)' : 'Send Verification OTP')}
+                  {loading ? <span className="loading-spinner" /> : <span>{isMr ? 'OTP पाठवा' : 'Send Verification OTP'}</span>}
                 </button>
 
-                <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                   {isMr ? 'आधीच खाते आहे का?' : 'Already have an account?'}{' '}
                   <button
                     type="button"
@@ -551,7 +467,7 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
                       background: 'none',
                       border: 'none',
                       color: 'var(--text-emerald)',
-                      fontWeight: 700,
+                      fontWeight: 800,
                       cursor: 'pointer',
                       textDecoration: 'underline',
                     }}
@@ -561,25 +477,25 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
                 </div>
               </form>
             ) : (
-              <form onSubmit={handleRegisterSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <form onSubmit={handleRegisterSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                    <Smartphone size={14} />
+                    <Smartphone size={14} color="var(--text-emerald)" />
                     {phone}
                   </span>
                   <button
                     type="button"
                     onClick={() => setStep(1)}
-                    style={{ background: 'none', border: 'none', color: 'var(--text-blue)', cursor: 'pointer', textDecoration: 'underline' }}
+                    style={{ background: 'none', border: 'none', color: 'var(--text-blue)', cursor: 'pointer', textDecoration: 'underline', fontSize: '0.75rem' }}
                   >
                     {isMr ? 'नंबर बदला' : 'Change Number'}
                   </button>
                 </div>
 
                 <div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
-                    <KeyRound size={14} />
-                    <span>{isMr ? '६ अंकी OTP टाका (Enter 6-Digit OTP)' : 'Enter 6-Digit OTP'}</span>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '5px' }}>
+                    <KeyRound size={14} color="var(--text-emerald)" />
+                    <span>{isMr ? '६ अंकी OTP' : '6-Digit OTP'}</span>
                   </label>
                   <input
                     type="text"
@@ -588,24 +504,15 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                     required
-                    style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: '10px',
-                      background: 'var(--bg-subtle)',
-                      border: '1px solid var(--border-subtle)',
-                      color: 'var(--text-title)',
-                      fontSize: '1.2rem',
-                      letterSpacing: '0.25em',
-                      textAlign: 'center',
-                    }}
+                    className="input-base"
+                    style={{ fontSize: '1.2rem', letterSpacing: '0.25em', textAlign: 'center', fontWeight: 700 }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
-                    <Lock size={14} />
-                    <span>{isMr ? 'नवीन ४-६ अंकी पिन तयार करा (Set Security PIN)' : 'Create 4-to-6 Digit PIN'}</span>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '5px' }}>
+                    <Lock size={14} color="var(--text-emerald)" />
+                    <span>{isMr ? 'नवीन ४-६ अंकी पिन' : 'Set 4-to-6 Digit PIN'}</span>
                   </label>
                   <input
                     type="password"
@@ -614,23 +521,15 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
                     value={pin}
                     onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
                     required
-                    style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: '10px',
-                      background: 'var(--bg-subtle)',
-                      border: '1px solid var(--border-subtle)',
-                      color: 'var(--text-title)',
-                      fontSize: '1rem',
-                      letterSpacing: '0.2em',
-                    }}
+                    className="input-base"
+                    style={{ fontSize: '1.1rem', letterSpacing: '0.2em' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
-                    <Lock size={14} />
-                    <span>{isMr ? 'पिन पुन्हा टाका (Confirm PIN)' : 'Confirm PIN'}</span>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '5px' }}>
+                    <Lock size={14} color="var(--text-emerald)" />
+                    <span>{isMr ? 'पिन पुन्हा टाका' : 'Confirm PIN'}</span>
                   </label>
                   <input
                     type="password"
@@ -639,16 +538,8 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
                     value={confirmPin}
                     onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ''))}
                     required
-                    style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: '10px',
-                      background: 'var(--bg-subtle)',
-                      border: '1px solid var(--border-subtle)',
-                      color: 'var(--text-title)',
-                      fontSize: '1rem',
-                      letterSpacing: '0.2em',
-                    }}
+                    className="input-base"
+                    style={{ fontSize: '1.1rem', letterSpacing: '0.2em' }}
                   />
                 </div>
 
@@ -656,31 +547,24 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
                   type="submit"
                   disabled={loading}
                   className="btn-primary"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    borderRadius: '10px',
-                    fontWeight: 700,
-                    fontSize: '0.95rem',
-                    marginTop: '6px',
-                  }}
+                  style={{ width: '100%', padding: '12px', marginTop: '4px' }}
                 >
-                  {loading ? (isMr ? 'नोंदणी करत आहे...' : 'Creating Account...') : (isMr ? 'खाते तयार करा (Complete Signup)' : 'Verify & Create Account')}
+                  {loading ? <span className="loading-spinner" /> : <span>{isMr ? 'खाते तयार करा' : 'Verify & Create Account'}</span>}
                 </button>
               </form>
             )}
           </div>
         )}
 
-        {/* ----------------- MODE 3: FORGOT PIN ----------------- */}
+        {/* MODE 3: FORGOT PIN */}
         {mode === 'forgot' && (
           <div>
             {step === 1 ? (
-              <form onSubmit={handleSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <form onSubmit={handleSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
-                    <Smartphone size={14} />
-                    <span>{isMr ? 'आपला नोंदणीकृत मोबाईल नंबर' : 'Registered Mobile Number'}</span>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '5px' }}>
+                    <Smartphone size={14} color="var(--text-emerald)" />
+                    <span>{isMr ? 'नोंदणीकृत मोबाईल नंबर' : 'Mobile Number'}</span>
                   </label>
                   <input
                     type="tel"
@@ -689,16 +573,8 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
                     required
-                    style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: '10px',
-                      background: 'var(--bg-subtle)',
-                      border: '1px solid var(--border-subtle)',
-                      color: 'var(--text-title)',
-                      fontSize: '0.95rem',
-                      letterSpacing: '0.04em',
-                    }}
+                    className="input-base"
+                    style={{ fontSize: '1.05rem', fontWeight: 600 }}
                   />
                 </div>
 
@@ -706,19 +582,12 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
                   type="submit"
                   disabled={loading}
                   className="btn-primary"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    borderRadius: '10px',
-                    fontWeight: 700,
-                    fontSize: '0.95rem',
-                    marginTop: '6px',
-                  }}
+                  style={{ width: '100%', padding: '12px', marginTop: '4px' }}
                 >
-                  {loading ? (isMr ? 'OTP पाठवत आहे...' : 'Sending OTP...') : (isMr ? 'OTP पाठवा (Send OTP)' : 'Send Reset OTP')}
+                  {loading ? <span className="loading-spinner" /> : <span>{isMr ? 'OTP पाठवा' : 'Send Reset OTP'}</span>}
                 </button>
 
-                <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '0.82rem' }}>
+                <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '0.8rem' }}>
                   <button
                     type="button"
                     onClick={() => resetFormState('login')}
@@ -735,11 +604,11 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
                 </div>
               </form>
             ) : (
-              <form onSubmit={handleResetSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <form onSubmit={handleResetSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
-                    <KeyRound size={14} />
-                    <span>{isMr ? '६ अंकी OTP टाका' : 'Enter 6-Digit OTP'}</span>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '5px' }}>
+                    <KeyRound size={14} color="var(--text-emerald)" />
+                    <span>{isMr ? '६ अंकी OTP' : 'Enter 6-Digit OTP'}</span>
                   </label>
                   <input
                     type="text"
@@ -748,23 +617,14 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                     required
-                    style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: '10px',
-                      background: 'var(--bg-subtle)',
-                      border: '1px solid var(--border-subtle)',
-                      color: 'var(--text-title)',
-                      fontSize: '1.2rem',
-                      letterSpacing: '0.25em',
-                      textAlign: 'center',
-                    }}
+                    className="input-base"
+                    style={{ fontSize: '1.2rem', letterSpacing: '0.25em', textAlign: 'center', fontWeight: 700 }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
-                    <Lock size={14} />
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '5px' }}>
+                    <Lock size={14} color="var(--text-emerald)" />
                     <span>{isMr ? 'नवीन ४-६ अंकी पिन' : 'New 4-to-6 Digit PIN'}</span>
                   </label>
                   <input
@@ -774,22 +634,14 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
                     value={pin}
                     onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
                     required
-                    style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: '10px',
-                      background: 'var(--bg-subtle)',
-                      border: '1px solid var(--border-subtle)',
-                      color: 'var(--text-title)',
-                      fontSize: '1rem',
-                      letterSpacing: '0.2em',
-                    }}
+                    className="input-base"
+                    style={{ fontSize: '1.1rem', letterSpacing: '0.2em' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
-                    <Lock size={14} />
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '5px' }}>
+                    <Lock size={14} color="var(--text-emerald)" />
                     <span>{isMr ? 'नवीन पिन पुन्हा टाका' : 'Confirm New PIN'}</span>
                   </label>
                   <input
@@ -799,16 +651,8 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
                     value={confirmPin}
                     onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ''))}
                     required
-                    style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: '10px',
-                      background: 'var(--bg-subtle)',
-                      border: '1px solid var(--border-subtle)',
-                      color: 'var(--text-title)',
-                      fontSize: '1rem',
-                      letterSpacing: '0.2em',
-                    }}
+                    className="input-base"
+                    style={{ fontSize: '1.1rem', letterSpacing: '0.2em' }}
                   />
                 </div>
 
@@ -816,16 +660,9 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
                   type="submit"
                   disabled={loading}
                   className="btn-primary"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    borderRadius: '10px',
-                    fontWeight: 700,
-                    fontSize: '0.95rem',
-                    marginTop: '6px',
-                  }}
+                  style={{ width: '100%', padding: '12px', marginTop: '4px' }}
                 >
-                  {loading ? (isMr ? 'बदलत आहे...' : 'Resetting...') : (isMr ? 'नवीन पिन जतन करा (Save PIN)' : 'Save New PIN & Login')}
+                  {loading ? <span className="loading-spinner" /> : <span>{isMr ? 'नवीन पिन जतन करा' : 'Save New PIN'}</span>}
                 </button>
               </form>
             )}

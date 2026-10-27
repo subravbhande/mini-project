@@ -8,7 +8,7 @@ export default function Navbar({
   systemStatus,
   theme,
   toggleTheme,
-  currentView = 'advisory', // 'advisory' | 'history'
+  currentView = 'advisory',
   setCurrentView,
   onOpenAuthModal,
 }) {
@@ -35,7 +35,7 @@ export default function Navbar({
       position: 'sticky',
       top: 0,
       zIndex: 50,
-      padding: '12px 24px',
+      padding: '12px 20px',
       transition: 'background 0.25s ease, border-color 0.25s ease',
     }}>
       <div style={{
@@ -44,54 +44,51 @@ export default function Navbar({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        flexWrap: 'wrap',
         gap: '12px'
       }}>
         {/* Brand */}
         <div
           onClick={() => setCurrentView('advisory')}
-          style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
+          style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
         >
           <div style={{
-            width: '42px',
-            height: '42px',
+            width: '40px',
+            height: '40px',
             borderRadius: '12px',
             background: 'var(--emerald-gradient)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '22px',
-            boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'
+            fontSize: '20px',
+            boxShadow: '0 4px 14px rgba(65, 97, 27, 0.4)',
+            flexShrink: 0,
           }}>
-            <Sprout size={24} color="#ffffff" />
+            <Sprout size={22} color="#ffffff" />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-title)' }}>
+              <span style={{ fontSize: '1.2rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-title)' }}>
                 AgriSense
               </span>
+
             </div>
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              {isMr
-                ? 'कृत्रिम बुद्धिमत्ता बाजारभाव अंदाज व विक्री सल्लागार'
-                : 'AI-Powered Market Price Forecast & Decision Advisory'}
-            </p>
+
           </div>
         </div>
 
-        {/* Center / Navigation Tabs */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* Center / Navigation Tabs (Desktop only - hidden on mobile) */}
+        <div className="desktop-nav-tabs" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
             type="button"
             id="nav-tab-advisory"
             onClick={() => setCurrentView('advisory')}
             style={{
-              background: currentView === 'advisory' ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+              background: currentView === 'advisory' ? 'var(--bg-pill)' : 'transparent',
               color: currentView === 'advisory' ? 'var(--text-emerald)' : 'var(--text-body)',
-              border: currentView === 'advisory' ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid transparent',
+              border: currentView === 'advisory' ? '1px solid var(--border-highlight)' : '1px solid transparent',
               borderRadius: '10px',
-              padding: '6px 14px',
-              fontSize: '0.82rem',
+              padding: '7px 14px',
+              fontSize: '0.84rem',
               fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
@@ -108,12 +105,12 @@ export default function Navbar({
             id="nav-tab-history"
             onClick={handleHistoryClick}
             style={{
-              background: currentView === 'history' ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+              background: currentView === 'history' ? 'var(--bg-pill)' : 'transparent',
               color: currentView === 'history' ? 'var(--text-emerald)' : 'var(--text-body)',
-              border: currentView === 'history' ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid transparent',
+              border: currentView === 'history' ? '1px solid var(--border-highlight)' : '1px solid transparent',
               borderRadius: '10px',
-              padding: '6px 14px',
-              fontSize: '0.82rem',
+              padding: '7px 14px',
+              fontSize: '0.84rem',
               fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
@@ -141,7 +138,7 @@ export default function Navbar({
         </div>
 
         {/* Right side controls (User, Theme, Language) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {/* Auth Button or User Dropdown */}
           {isAuthenticated ? (
             <div style={{ position: 'relative' }}>
@@ -155,15 +152,15 @@ export default function Navbar({
                   padding: '6px 12px',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
+                  gap: '6px',
                   cursor: 'pointer',
                   color: 'var(--text-title)',
                   fontSize: '0.82rem',
                   fontWeight: 600,
                 }}
               >
-                <User size={16} />
-                <span style={{ maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <User size={15} color="var(--text-emerald)" />
+                <span style={{ maxWidth: '95px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {user?.name || (isMr ? 'बळीराजा' : 'Farmer')}
                 </span>
                 <ChevronDown size={14} />
@@ -174,23 +171,23 @@ export default function Navbar({
                   style={{
                     position: 'absolute',
                     right: 0,
-                    top: '110%',
+                    top: '115%',
                     background: 'var(--bg-nav)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: '12px',
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+                    border: '1.5px solid var(--border-card)',
+                    borderRadius: '14px',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.4)',
                     padding: '8px',
-                    minWidth: '180px',
+                    minWidth: '200px',
                     zIndex: 100,
-                    backdropFilter: 'blur(12px)',
+                    backdropFilter: 'blur(16px)',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '4px',
                   }}
                 >
-                  <div style={{ padding: '6px 10px', borderBottom: '1px solid var(--border-subtle)', marginBottom: '4px' }}>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-title)' }}>{user?.name}</div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{user?.phone}</div>
+                  <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border-subtle)', marginBottom: '4px' }}>
+                    <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-title)' }}>{user?.name}</div>
+                    <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>{user?.phone}</div>
                   </div>
 
                   <button
@@ -203,16 +200,16 @@ export default function Navbar({
                       border: 'none',
                       textAlign: 'left',
                       padding: '8px 10px',
-                      borderRadius: '6px',
+                      borderRadius: '8px',
                       color: 'var(--text-title)',
-                      fontSize: '0.8rem',
+                      fontSize: '0.82rem',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px',
                     }}
                   >
-                    <ClipboardList size={16} />
+                    <ClipboardList size={16} color="var(--text-emerald)" />
                     <span>{isMr ? 'माझा शेतमाल इतिहास' : 'My Harvest History'}</span>
                   </button>
 
@@ -227,9 +224,9 @@ export default function Navbar({
                       border: 'none',
                       textAlign: 'left',
                       padding: '8px 10px',
-                      borderRadius: '6px',
+                      borderRadius: '8px',
                       color: 'var(--text-red)',
-                      fontSize: '0.8rem',
+                      fontSize: '0.82rem',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -249,11 +246,11 @@ export default function Navbar({
               type="button"
               onClick={() => onOpenAuthModal('login')}
               style={{
-                background: 'rgba(16, 185, 129, 0.15)',
+                background: 'var(--bg-pill)',
                 color: 'var(--text-emerald)',
-                border: '1px solid rgba(16, 185, 129, 0.35)',
+                border: '1px solid var(--border-highlight)',
                 borderRadius: '10px',
-                padding: '6px 14px',
+                padding: '6px 13px',
                 fontSize: '0.82rem',
                 fontWeight: 700,
                 cursor: 'pointer',
@@ -262,75 +259,80 @@ export default function Navbar({
                 gap: '6px',
               }}
             >
-              <User size={16} />
-              <span>{isMr ? 'लॉगिन / नोंदणी' : 'Sign In'}</span>
+              <User size={15} />
+              <span>{isMr ? 'लॉगिन' : 'Sign In'}</span>
             </button>
           )}
 
-          {/* Theme Toggle Button */}
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="theme-toggle-btn"
-            title={isDark
-              ? (isMr ? 'लाईट मोड सुरू करा (Switch to Light Mode)' : 'Switch to Light Mode')
-              : (isMr ? 'डार्क मोड सुरू करा (Switch to Dark Mode)' : 'Switch to Dark Mode')}
-            aria-label="Toggle theme"
-          >
-            <span className="theme-icon-rotate" style={{ display: 'inline-flex', alignItems: 'center' }}>
-              {isDark ? <Sun size={16} /> : <Moon size={16} />}
-            </span>
-            <span>
-              {isDark
-                ? (isMr ? 'प्रकाश' : 'Light')
-                : (isMr ? 'गडद' : 'Dark')}
-            </span>
-          </button>
+          {/* Desktop Only: Theme & Language Controls */}
+          <div className="desktop-controls" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Theme Toggle Button */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="theme-toggle-btn"
+              title={isDark
+                ? (isMr ? 'लाईट मोड (Light Mode)' : 'Switch to Light Mode')
+                : (isMr ? 'डार्क मोड (Dark Mode)' : 'Switch to Dark Mode')}
+              aria-label="Toggle theme"
+            >
+              <span className="theme-icon-rotate" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                {isDark ? <Sun size={15} /> : <Moon size={15} />}
+              </span>
+              <span>{isDark ? (isMr ? 'लाईट' : 'Light') : (isMr ? 'डार्क' : 'Dark')}</span>
+            </button>
 
-          {/* Language Switch */}
-          <div style={{
-            display: 'flex',
-            background: 'var(--bg-subtle)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: '10px',
-            padding: '3px',
-            transition: 'background 0.2s, border-color 0.2s',
-          }}>
-            <button
-              onClick={() => setLang('en')}
-              style={{
-                background: lang === 'en' ? 'var(--emerald-gradient)' : 'transparent',
-                color: lang === 'en' ? '#fff' : 'var(--text-muted)',
-                border: 'none',
-                borderRadius: '7px',
-                padding: '4px 10px',
-                fontSize: '0.78rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.15s'
-              }}
-            >
-              EN
-            </button>
-            <button
-              onClick={() => setLang('mr')}
-              style={{
-                background: lang === 'mr' ? 'var(--emerald-gradient)' : 'transparent',
-                color: lang === 'mr' ? '#fff' : 'var(--text-muted)',
-                border: 'none',
-                borderRadius: '7px',
-                padding: '4px 10px',
-                fontSize: '0.78rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.15s'
-              }}
-            >
-              मराठी
-            </button>
+            {/* Language Switch */}
+            <div style={{
+              display: 'flex',
+              background: 'var(--bg-subtle)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '10px',
+              padding: '2px',
+            }}>
+              <button
+                onClick={() => setLang('en')}
+                style={{
+                  background: lang === 'en' ? 'var(--emerald-gradient)' : 'transparent',
+                  color: lang === 'en' ? '#fff' : 'var(--text-muted)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '4px 9px',
+                  fontSize: '0.76rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                EN
+              </button>
+              <button
+                onClick={() => setLang('mr')}
+                style={{
+                  background: lang === 'mr' ? 'var(--emerald-gradient)' : 'transparent',
+                  color: lang === 'mr' ? '#fff' : 'var(--text-muted)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '4px 9px',
+                  fontSize: '0.76rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                मराठी
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      <style>{`
+        @media (min-width: 769px) {
+          .desktop-subtitle { display: block !important; }
+        }
+        @media (max-width: 768px) {
+          .desktop-nav-tabs, .desktop-controls { display: none !important; }
+        }
+      `}</style>
     </header>
   );
 }
