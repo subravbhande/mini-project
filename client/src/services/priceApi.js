@@ -160,7 +160,7 @@ export async function recordSaleOutcomeApi(payload) {
 
 export async function fetchHistorySummaryApi() {
   const res = await api.get("/api/batch/stats/summary");
-  return res.data;
+  return res.data?.data || res.data || {};
 }
 
 export default api;

@@ -39,8 +39,8 @@ export default function FarmerHistoryView({ user: propUser, lang = 'mr', theme =
         fetchUserBatchesApi(),
         fetchHistorySummaryApi(),
       ]);
-      setBatches(batchList);
-      setSummary(sumStats);
+      setBatches(Array.isArray(batchList) ? batchList : (batchList?.data || []));
+      setSummary(sumStats?.data || sumStats || {});
     } catch (err) {
       console.error('Failed to load farmer history:', err);
       setError(err.response?.data?.message || err.message || 'Failed to load history.');
@@ -161,9 +161,9 @@ export default function FarmerHistoryView({ user: propUser, lang = 'mr', theme =
             <div style={{
               fontSize: 'clamp(1.3rem, 3.5vw, 1.7rem)',
               fontWeight: 800,
-              color: summary.totalRealizedUplift >= 0 ? 'var(--text-emerald)' : 'var(--text-red)',
+              color: (Number(summary.totalRealizedUplift) || 0) >= 0 ? 'var(--text-emerald)' : 'var(--text-red)',
             }}>
-              {summary.totalRealizedUplift >= 0 ? `+₹${summary.totalRealizedUplift.toLocaleString()}` : `-₹${Math.abs(summary.totalRealizedUplift).toLocaleString()}`}
+              {(Number(summary.totalRealizedUplift) || 0) >= 0 ? `+₹${(Number(summary.totalRealizedUplift) || 0).toLocaleString()}` : `-₹${Math.abs(Number(summary.totalRealizedUplift) || 0).toLocaleString()}`}
             </div>
             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>
               {isMr ? 'AI सल्ल्याने जादा उत्पन्न' : 'Extra vs day-0 sale'}
@@ -177,10 +177,10 @@ export default function FarmerHistoryView({ user: propUser, lang = 'mr', theme =
               <span>{isMr ? 'एकूण विक्री' : 'Total Revenue'}</span>
             </div>
             <div style={{ fontSize: 'clamp(1.3rem, 3.5vw, 1.7rem)', fontWeight: 800, color: 'var(--text-blue)' }}>
-              ₹{summary.totalRealizedRevenue.toLocaleString()}
+              ₹{(Number(summary.totalRealizedRevenue) || 0).toLocaleString()}
             </div>
             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-              {isMr ? `${summary.soldBatches} पूर्ण लॉट्समधून` : `From ${summary.soldBatches} sales`}
+              {isMr ? `${summary.soldBatches || 0} पूर्ण लॉट्समधून` : `From ${summary.soldBatches || 0} sales`}
             </div>
           </div>
 
@@ -191,7 +191,7 @@ export default function FarmerHistoryView({ user: propUser, lang = 'mr', theme =
               <span>{isMr ? 'चालू साठा' : 'Active Holding'}</span>
             </div>
             <div style={{ fontSize: 'clamp(1.3rem, 3.5vw, 1.7rem)', fontWeight: 800, color: 'var(--text-title)' }}>
-              {summary.activeBatches}
+              {summary.activeBatches || 0}
             </div>
             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>
               {isMr ? 'सध्या साठवून ठेवलेला' : 'Currently monitoring'}
@@ -205,7 +205,7 @@ export default function FarmerHistoryView({ user: propUser, lang = 'mr', theme =
               <span>{isMr ? 'नफ्यातील व्यवहार' : 'Profitable'}</span>
             </div>
             <div style={{ fontSize: 'clamp(1.3rem, 3.5vw, 1.7rem)', fontWeight: 800, color: 'var(--text-emerald)' }}>
-              {summary.profitableSalesCount} / {summary.soldBatches || 0}
+              {summary.profitableSalesCount || 0} / {summary.soldBatches || 0}
             </div>
             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>
               {isMr ? 'फायद्यात झालेली विक्री' : 'Positive uplift'}
@@ -295,7 +295,7 @@ export default function FarmerHistoryView({ user: propUser, lang = 'mr', theme =
                           boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
                         }}>
                           <img
-                            src={batch.commodity.toLowerCase() === 'onion' ? '/onion.jpg' : '/tomato.jpg'}
+                            src={(batch.commodity || '').toLowerCase() === 'onion' ? '/onion.jpg' : '/tomato.jpg'}
                             alt={batch.commodity}
                             style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                           />
