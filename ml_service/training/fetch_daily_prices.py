@@ -263,7 +263,7 @@ def generate_continuity_records(
     # Deterministic slight walk for realistic price movement
     step = 0
     while curr <= target:
-        # APMC mandis are closed on Sundays
+        # APMC markets are closed on Sundays
         if curr.weekday() != 6:
             for (dist, mkt, crop), meta in recent_p.items():
                 step += 1

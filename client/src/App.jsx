@@ -476,7 +476,7 @@ function App() {
             <Sprout size={15} color="var(--accent-green)" />
             <strong>Distress-Sale Timing Advisor</strong> — Decision Support for Farmers
           </span>
-          <span>Kolhapur & Sangli APMC Mandis • Climatology & Multi-Step Machine Learning</span>
+          <span>Kolhapur & Sangli APMC Markets • Climatology & Multi-Step Machine Learning</span>
         </div>
       </footer>
     </div>

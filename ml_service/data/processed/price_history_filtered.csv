@@ -1,4 +1,4 @@
-﻿State/UT,District,Market,Commodity Group,Commodity,Variety,Grade,Min Price,Max Price,Modal Price,Price Unit,Arrival Quantity,Arrival Unit,Arrival Date,source_file
+State/UT,District,Market,Commodity Group,Commodity,Variety,Grade,Min Price,Max Price,Modal Price,Price Unit,Arrival Quantity,Arrival Unit,Arrival Date,source_file
 Maharashtra,Kolhapur,Kolhapur,Vegetables,Onion,Other,Local,500.0,2000.0,1000.0,Rs./Quintal,395.60,Metric Tonnes,2025-11-07,Daily_Price_Arrival_Report-07-11-2025_to_25-09-2026_for_Sangli_Kolhapur_Onion.csv
 Maharashtra,Kolhapur,Kolhapur,Vegetables,Onion,Other,Local,500.0,2000.0,1000.0,Rs./Quintal,687.90,Metric Tonnes,2025-11-08,Daily_Price_Arrival_Report-07-11-2025_to_25-09-2026_for_Sangli_Kolhapur_Onion.csv
 Maharashtra,Kolhapur,Kolhapur,Vegetables,Onion,Other,Local,500.0,2000.0,1000.0,Rs./Quintal,606.30,Metric Tonnes,2025-11-10,Daily_Price_Arrival_Report-07-11-2025_to_25-09-2026_for_Sangli_Kolhapur_Onion.csv
@@ -565,7 +565,7 @@ Maharashtra,Sangli,Sangli-Phale-Bhajipala,Vegetables,Onion,Local,Local,2988.16,3
 Maharashtra,Sangli,Sangli-Phale-Bhajipala,Vegetables,Onion,Local,Local,2965.75,3481.53,3223.64,Rs./Quintal,132.21,Metric Tonnes,2026-10-23,data_gov_in_continuity_sync
 Maharashtra,Sangli,Sangli-Phale-Bhajipala,Vegetables,Onion,Local,Local,2988.16,3507.84,3248.0,Rs./Quintal,132.21,Metric Tonnes,2026-10-24,data_gov_in_continuity_sync
 Maharashtra,Sangli,Sangli-Phale-Bhajipala,Vegetables,Onion,Local,Local,3010.57,3534.15,3272.36,Rs./Quintal,132.21,Metric Tonnes,2026-10-26,data_gov_in_continuity_sync
-Maharashtra,Sangli,Sangli-Phale-Bhajipala,Vegetables,Onion,Local,Local,4140.0,4860.0,4500.0,Rs./Quintal,125.6,Metric Tonnes,2026-10-27,mandi_active_spot_calibration
+Maharashtra,Sangli,Sangli-Phale-Bhajipala,Vegetables,Onion,Local,Local,4140.0,4860.0,4500.0,Rs./Quintal,125.6,Metric Tonnes,2026-10-27,market_active_spot_calibration
 Maharashtra,Sangli,Sangli-Phale-Bhajipala,Vegetables,Onion,Local,Local,4108.95,4823.55,4466.25,Rs./Quintal,119.32,Metric Tonnes,2026-10-28,data_gov_in_continuity_sync
 Maharashtra,Sangli,Sangli-Phale-Bhajipala,Vegetables,Onion,Local,Local,4140.0,4860.0,4500.0,Rs./Quintal,119.32,Metric Tonnes,2026-10-29,data_gov_in_continuity_sync
 Maharashtra,Kolhapur,Vadgaonpeth,Vegetables,Onion,Local,Local,1200.0,2200.0,1400.0,Rs./Quintal,26.00,Metric Tonnes,2025-11-07,Daily_Price_Arrival_Report-07-11-2025_to_25-09-2026_for_Sangli_Kolhapur_Onion.csv

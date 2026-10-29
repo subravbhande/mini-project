@@ -298,7 +298,7 @@ class PriceModel:
                 else:
                     as_of_ts = min(latest_report_date, today_ts)
             elif latest_report_date >= today_ts:
-                # We have today's live/recorded mandi price in dataset
+                # We have today's live/recorded market price in dataset
                 as_of_ts = today_ts
             else:
                 as_of_ts = min(latest_report_date, today_ts)

@@ -12,7 +12,7 @@ export default function AgriLoader({ lang = 'en', compact = false, customMessage
         { icon: '⚖️', text: 'ब्रेक-इव्हन भाव व निव्वळ नफा तुलना तयार करत आहे...' },
       ]
     : [
-        { icon: '🌱', text: 'Connecting to Kolhapur & Sangli APMC mandis...' },
+        { icon: '🌱', text: 'Connecting to Kolhapur & Sangli APMC markets...' },
         { icon: '🌦️', text: 'Analyzing localized weather & temperature forecast...' },
         { icon: '📉', text: 'Modeling natural shelf-life decay & storage cost...' },
         { icon: '⚖️', text: 'Calculating break-even threshold & optimal sale timing...' },

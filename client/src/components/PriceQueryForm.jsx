@@ -108,7 +108,7 @@ export default function PriceQueryForm({
         {/* <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
           {isMr
             ? 'आपले पीक, बाजार समिती, साठवणूक व प्रमाण निवडा — AI मॉडेल अचूक विक्री सल्ला देईल.'
-            : 'Select crop, mandi, storage, and volume for AI distress-sale advisory.'}
+            : 'Select crop, market, storage, and volume for AI distress-sale advisory.'}
         </p> */}
       </div>
 
@@ -229,7 +229,7 @@ export default function PriceQueryForm({
           </div>
         </div>
 
-        {/* Step 2: Mandi Selection */}
+        {/* Step 2: Market Selection */}
         <div>
           <label style={{
             display: 'block',
@@ -240,7 +240,7 @@ export default function PriceQueryForm({
             textTransform: 'uppercase',
             letterSpacing: '0.04em'
           }}>
-            2. {isMr ? 'बाजार समिती (APMC Mandi)' : 'Target Mandi'}
+            2. {isMr ? 'बाजार समिती (APMC Market)' : 'Target Market'}
           </label>
           <select
             value={formData.market}

@@ -3,7 +3,7 @@
 > **Project Name:** AgriSense — AI Distress-Sale Timing Advisor  
 > **Target Domain:** Agricultural Economics, Post-Harvest Loss Mitigation, and APMC Commodity Price Forecasting  
 > **Commodities:** Onion (*Allium cepa*) and Tomato (*Solanum lycopersicum*)  
-> **Target Mandis:** Kolhapur, Sangli-Phale-Bhajipala, Vadgaonpeth, and Islampur (Maharashtra, India)  
+> **Target Markets:** Kolhapur, Sangli-Phale-Bhajipala, Vadgaonpeth, and Islampur (Maharashtra, India)  
 > **Evaluation Horizon:** Multi-horizon (1 to 7 Days Ahead)  
 
 ---
@@ -30,7 +30,7 @@
 
 | Sr.No | Algorithm / method used | Accuracy | Precision | Primary Role in AgriSense |
 | :---: | :--- | :---: | :---: | :--- |
-| **1** | **XGBoost Regressor** | 89.26% | 86.80% | 1–7 day rolling modal price prediction across APMC mandis |
+| **1** | **XGBoost Regressor** | 89.26% | 86.80% | 1–7 day rolling modal price prediction across APMC markets |
 | **2** | **Non-Linear Empirical Decay Model** | 94.10% | 91.80% | Daily physical weight loss & grade discount estimation |
 | **3** | **Dynamic NRV Optimization Engine** | 88.50% | 89.40% | Economic timing decision: **SELL**, **HOLD**, or **PARTIAL_SELL** |
 | **4** | **Gemini 3.1 Flash-Lite NLP Engine** | 95.20% | 93.80% | Farmer query intent classification & multilingual guidance |
@@ -147,7 +147,7 @@ $$\Delta P_{\text{breakeven}}\%(t) = \left( \frac{P_{\text{breakeven}}(t) - P(0)
 ### 4.4 XGBoost Tree Boosting Objective Function
 The loss function minimized by the gradient boosting regression trees with $L_1$ and $L_2$ regularization:
 $$\mathcal{L}^{(m)} = \sum_{i=1}^{n} \left( y_i - \left(\hat{y}_i^{(m-1)} + f_m(\mathbf{x}_i)\right) \right)^2 + \gamma T + \frac{1}{2}\lambda \sum_{j=1}^{T} w_j^2 + \alpha \sum_{j=1}^{T} |w_j|$$
-Where $\alpha = 0.1$ ($L_1$ lasso shrinkage) and $\lambda = 1.0$ ($L_2$ ridge shrinkage) prevent overfitting on small mandi sample distributions.
+Where $\alpha = 0.1$ ($L_1$ lasso shrinkage) and $\lambda = 1.0$ ($L_2$ ridge shrinkage) prevent overfitting on small market sample distributions.
 
 ---
 
@@ -157,8 +157,8 @@ Where $\alpha = 0.1$ ($L_1$ lasso shrinkage) and $\lambda = 1.0$ ($L_2$ ridge sh
 | :-: | :--- | :--- | :--- |
 | **A** | **Crop:** Tomato or Onion<br>**Market:** Any APMC<br>**Storage:** Any<br>**Cash Need:** **Immediate / Urgent** | **`decision: "SELL"`**<br>• Hold Days: **0**<br>• Sell Fraction: **1.0 (100%)**<br>• Uplift: 0.0% | **Hard Liquidity Constraint:** Emergency cash demands override market speculation. The farmer cannot afford price volatility or storage carrying costs. |
 | **B** | **Crop:** **Tomato**<br>**Market:** Kolhapur<br>**Storage:** **Ambient / Open Shed**<br>**Cash Need:** Normal / Low | **`decision: "SELL"`**<br>• Hold Days: **0**<br>• Sell Fraction: **1.0**<br>• Risk: **HIGH** | **Rapid Spoilage Hazard:** High ambient temperature drives daily weight loss (1.5%/day) and quality discounts (up to 40% by Day 7). Post-harvest decay outstrips standard price gains. |
-| **C** | **Crop:** **Tomato**<br>**Market:** Vadgaonpeth<br>**Storage:** **ZECC / Cold Storage**<br>**Cash Need:** Normal / Low | **`decision: "HOLD"`**<br>• Hold Days: **3 to 5 days**<br>• Sell Fraction: **0.0**<br>• Uplift: **+5.8% to +10.4%** | **Cold Chain Preservation:** Controlled temperature (12°C) suppresses decay kinetics. Projected mandi price surge comfortably covers the ₹3–₹8/qtl storage fee. |
-| **D** | **Crop:** **Onion**<br>**Market:** Sangli-Phale-Bhajipala<br>**Storage:** **Ventilated Chawl**<br>**Cash Need:** Normal / Low | **`decision: "HOLD"`**<br>• Hold Days: **5 to 7 days**<br>• Sell Fraction: **0.0**<br>• Uplift: **+4.2% to +8.5%** | **Safe Storage Window:** Naturally ventilated kanda chawl reduces spoilage (mitigation factor 0.40). Onions remain grade-A, capturing peak weekend mandi prices. |
+| **C** | **Crop:** **Tomato**<br>**Market:** Vadgaonpeth<br>**Storage:** **ZECC / Cold Storage**<br>**Cash Need:** Normal / Low | **`decision: "HOLD"`**<br>• Hold Days: **3 to 5 days**<br>• Sell Fraction: **0.0**<br>• Uplift: **+5.8% to +10.4%** | **Cold Chain Preservation:** Controlled temperature (12°C) suppresses decay kinetics. Projected market price surge comfortably covers the ₹3–₹8/qtl storage fee. |
+| **D** | **Crop:** **Onion**<br>**Market:** Sangli-Phale-Bhajipala<br>**Storage:** **Ventilated Chawl**<br>**Cash Need:** Normal / Low | **`decision: "HOLD"`**<br>• Hold Days: **5 to 7 days**<br>• Sell Fraction: **0.0**<br>• Uplift: **+4.2% to +8.5%** | **Safe Storage Window:** Naturally ventilated kanda chawl reduces spoilage (mitigation factor 0.40). Onions remain grade-A, capturing peak weekend market prices. |
 | **E** | **Crop:** **Tomato**<br>**Market:** Islampur<br>**Storage:** Ambient Shade<br>**Cash Need:** Normal | **`decision: "PARTIAL_SELL"`**<br>• Hold Days: **2 days**<br>• Sell Fraction: **0.50 (50%)**<br>• Confidence: **Moderate** | **Risk Hedging Strategy:** Projected uplift is positive (+2.5%), but high market variance or moderate decay risk prompts liquidating 50% for cash and holding 50% for upside. |
 | **F** | **Crop:** **Onion**<br>**Market:** Kolhapur<br>**Storage:** Ventilated Chawl<br>**Cash Need:** Low<br>*(Price Forecast: Flat / Bearish)* | **`decision: "SELL"`**<br>• Hold Days: **0**<br>• Sell Fraction: **1.0**<br>• Uplift: $\le 1.0\%$ | **Bearish Market Avoidance:** Even with excellent storage, holding in a flat or declining market incurs carrying fees and weight loss with zero profit upside. |
 
@@ -174,8 +174,8 @@ Evaluated on **1,650 real daily market arrival and price transactions** (Novembe
 | **Onion** | Semi-Perishable | ₹130.50 | ₹214.30 | **7.53%** | **92.47%** |
 | **Tomato** | Highly Perishable | ₹217.53 | ₹318.40 | **13.94%** | **86.06%** |
 
-### 6.2 Accuracy Across APMC Markets (Mandis)
-| Commodity | APMC Mandi | Evaluation Horizon | MAE (₹/Qtl) | MAPE (%) | **Accuracy (%)** |
+### 6.2 Accuracy Across APMC Markets
+| Commodity | APMC Market | Evaluation Horizon | MAE (₹/Qtl) | MAPE (%) | **Accuracy (%)** |
 | :--- | :--- | :---: | :---: | :---: | :---: |
 | **Onion** | **Kolhapur** | Day 2 – Day 5 | ₹94 – ₹124 | 6.15% – 7.89% | **92.11% – 93.85%** |
 | **Onion** | **Sangli-Phale-Bhajipala** | Day 2 – Day 5 | ₹100 – ₹187 | 5.86% – 9.35% | **90.65% – 94.14%** |
@@ -184,7 +184,7 @@ Evaluated on **1,650 real daily market arrival and price transactions** (Novembe
 | **Tomato** | **Vadgaonpeth** | Day 1 – Day 5 | ₹262 – ₹330 | 16.73% – 20.18% | **79.82% – 83.27%** |
 | **Tomato** | **Islampur** | Day 1 – Day 3 | ₹210 – ₹245 | 14.20% – 16.90% | **83.10% – 85.80%** |
 
-*Insight:* Major trading hubs (**Kolhapur**, **Sangli**) have continuous arrivals and liquidity, yielding accuracy above **90–93%**. Smaller feeder mandis (**Vadgaonpeth**) experience sporadic arrival shocks, giving **80–83%** accuracy.
+*Insight:* Major trading hubs (**Kolhapur**, **Sangli**) have continuous arrivals and liquidity, yielding accuracy above **90–93%**. Smaller feeder markets (**Vadgaonpeth**) experience sporadic arrival shocks, giving **80–83%** accuracy.
 
 ### 6.3 Spoilage & Quality Decay Model Accuracy by Storage Type
 | Storage Type | Daily Cost (₹/Qtl) | Applied Crop | Spoilage Tracking Accuracy |
@@ -206,7 +206,7 @@ Evaluated on **1,650 real daily market arrival and price transactions** (Novembe
 ## 7. Key Defense Q&A for Mini-Project Presentation
 
 **Q1: Why did you choose XGBoost over Deep Learning (LSTM / GRU)?**  
-*Answer:* Agricultural APMC datasets at the local mandi level have modest sample sizes (~1,650 rows across seasons). LSTMs tend to overfit and require heavy computational infrastructure. XGBoost excels on tabular features with non-linear weather interactions (rainfall, humidity, soil moisture) and has low latency (<50ms inference on CPU).
+*Answer:* Agricultural APMC datasets at the local market level have modest sample sizes (~1,650 rows across seasons). LSTMs tend to overfit and require heavy computational infrastructure. XGBoost excels on tabular features with non-linear weather interactions (rainfall, humidity, soil moisture) and has low latency (<50ms inference on CPU).
 
 **Q2: How does your model avoid recommending a hold that leads to rotten produce?**  
 *Answer:* Through the coupled **Arrhenius-based Decay Model**. Before recommending a hold, the system calculates the daily degraded weight and quality price discount. If spoilage risk reaches `"HIGH"` or if quality loss exceeds projected price gains, the decision immediately defaults to `"SELL"`.

@@ -94,7 +94,7 @@ Raw Data (Price CSV + Weather CSVs)
 | Backend Cron Job | `backend/src/jobs/dailyPriceSyncJob.js` (runs daily at 06:00 AM) |
 | On-Demand Endpoints | `POST /price/sync` (FastAPI), `POST /api/price/sync` (Node.js backend) |
 | Target Commodities | Tomato, Onion |
-| Target Mandis | Kolhapur, Vadgaonpeth, Islampur, Sangli-Phale-Bhajipala |
+| Target Markets | Kolhapur, Vadgaonpeth, Islampur, Sangli-Phale-Bhajipala |
 | Date Range | Nov 2025 - Present (Daily Updated) |
 | Columns | State, District, Market, Commodity, Variety, Grade, Min/Max/Modal Price, Arrival Quantity, Date |
 
@@ -806,7 +806,7 @@ The AgriSense system features a closed-loop learning architecture that automatic
 +-----------------------------------------------------------------------------------+
 |                                                                                   |
 |  1. Price Predictions Logged           2. Next-Day Actual Arrivals Ingested       |
-|     (Commodity, Mandi, TargetDate,         (data.gov.in & OpenWeatherMap)         |
+|     (Commodity, Market, TargetDate,        (data.gov.in & OpenWeatherMap)         |
 |      PredictedPrice, Bands)                                                       |
 |              \                                    /                               |
 |               \                                  /                                |

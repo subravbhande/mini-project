@@ -162,7 +162,7 @@ Walchand College of Engineering, Sangli
 | | 5.4 Test Execution Summary and Defect Remediation | 35 |
 | **6** | **Results and Discussion** | **37** |
 | | 6.1 Algorithmic Comparative Benchmark Analysis | 37 |
-| | 6.2 Granular Commodity and Mandi-Wise Performance | 40 |
+| | 6.2 Granular Commodity and Market-Wise Performance | 40 |
 | | 6.3 Combinatorial Scenario Analysis (Crop × Market × Storage × Need) | 43 |
 | | 6.4 User Interface Implementation & System Screenshots | 45 |
 | | 6.5 Production Cloud Deployment and High Availability | 48 |
@@ -207,7 +207,7 @@ Walchand College of Engineering, Sangli
 | Table No. | Table Caption | Page No. |
 | :---: | :--- | :---: |
 | **Table 1.1** | Qualitative Comparison of Existing Agri-Tech Platforms vs. AgriSense | 4 |
-| **Table 4.1** | Selected Commodities and Target Mandis in Western Maharashtra | 13 |
+| **Table 4.1** | Selected Commodities and Target Markets in Western Maharashtra | 13 |
 | **Table 4.2** | Engineered Feature Matrix for Gradient Boosted Price Forecasting | 15 |
 | **Table 4.3** | Agronomic Storage Mitigation Multipliers ($M_{\text{storage}}$) and Unit Costs | 16 |
 | **Table 4.4** | Decision Matrix Heuristics governing Action Selection | 21 |
@@ -217,12 +217,12 @@ Walchand College of Engineering, Sangli
 | **Table 6.1** | Comparative Algorithm Performance Table (Benchmarking vs. Baselines) | 38 |
 | **Table 6.2** | System Pipeline Component-Wise Methodology Performance | 39 |
 | **Table 6.3** | Granular Model Accuracy Breakdown by Commodity | 40 |
-| **Table 6.4** | Mandi-Wise Price Forecasting Performance across Target Markets | 41 |
+| **Table 6.4** | Market-Wise Price Forecasting Performance across Target Markets | 41 |
 | **Table 6.5** | Spoilage Tracking Accuracy across Crop Storage Modalities | 42 |
 | **Table 6.6** | Decision Engine Constraint Compliance by Farmer Cash Need Level | 43 |
-| **Table 6.7** | Behavioral Profile Matrix across Crop, Mandi, Storage, and Liquidity Inputs | 44 |
+| **Table 6.7** | Behavioral Profile Matrix across Crop, Market, Storage, and Liquidity Inputs | 44 |
 | **Table 6.8** | Live Production Deployment URLs and Service Health Verification | 48 |
-| **Table 10.1** | Field Feedback and Quantitative Economic Validation from Mandi Farmers | 58 |
+| **Table 10.1** | Field Feedback and Quantitative Economic Validation from Market Farmers | 58 |
 
 ---
 
@@ -296,10 +296,10 @@ To bridge the digital literacy divide for regional rural farmers, AgriSense feat
 ## 1.1 Background and Domain Context
 Agriculture forms the backbone of the Indian socio-economic fabric, contributing significantly to national GDP and employing more than 45% of the total labor force. While India has achieved historic self-sufficiency in food grain production, the horticultural sector—comprising fruits, vegetables, and tubers—has emerged as the primary growth driver of the rural agricultural economy. Perishable horticultural crops, notably **Tomato** (*Solanum lycopersicum*) and semi-perishable cash crops such as **Onion** (*Allium cepa*), represent critical high-value produce for smallholder and marginal farmers in Maharashtra.
 
-In the Western Maharashtra agro-climatic zone, spanning the districts of **Kolhapur** and **Sangli**, agricultural prosperity is strongly tied to major regional Agricultural Produce Market Committee (APMC) mandis, including the **Kolhapur APMC (Sheti Utpanna Bajar Samiti)**, **Sangli-Phale-Bhajipala APMC**, **Vadgaonpeth APMC**, and **Islampur APMC**. These mandis handle hundreds of tons of daily arrivals. However, unlike cereal crops (wheat, paddy) that enjoy government procurement at Minimum Support Prices (MSP), horticultural commodities operate in a fully deregulated open-market auction system subject to extreme price volatility, seasonal arrival gluts, and rapid post-harvest physical decay.
+In the Western Maharashtra agro-climatic zone, spanning the districts of **Kolhapur** and **Sangli**, agricultural prosperity is strongly tied to major regional Agricultural Produce Market Committee (APMC) markets, including the **Kolhapur APMC (Sheti Utpanna Bajar Samiti)**, **Sangli-Phale-Bhajipala APMC**, **Vadgaonpeth APMC**, and **Islampur APMC**. These markets handle hundreds of tons of daily arrivals. However, unlike cereal crops (wheat, paddy) that enjoy government procurement at Minimum Support Prices (MSP), horticultural commodities operate in a fully deregulated open-market auction system subject to extreme price volatility, seasonal arrival gluts, and rapid post-harvest physical decay.
 
 ## 1.2 The Agricultural Crisis of Distress Selling in Maharashtra
-A fundamental paradox of Indian agricultural marketing is that bumper harvest yields frequently translate into financial disaster for primary producers. During harvest peaks, market arrivals spike simultaneously across thousands of contiguous farms. The basic microeconomic dynamics of inelastic short-term demand cause mandi wholesale prices to crash precipitously—often dropping to as low as ₹2 to ₹5 per kilogram for tomatoes and ₹6 to ₹9 per kilogram for onions, amounts insufficient to recover even harvesting, packaging, and crate transportation costs.
+A fundamental paradox of Indian agricultural marketing is that bumper harvest yields frequently translate into financial disaster for primary producers. During harvest peaks, market arrivals spike simultaneously across thousands of contiguous farms. The basic microeconomic dynamics of inelastic short-term demand cause market wholesale prices to crash precipitously—often dropping to as low as ₹2 to ₹5 per kilogram for tomatoes and ₹6 to ₹9 per kilogram for onions, amounts insufficient to recover even harvesting, packaging, and crate transportation costs.
 
 Faced with crashing market prices, the smallholder farmer faces an agonizing dilemma known in agricultural economics as the **Distress Sale Trap**:
 1. **Immediate Offloading (Premature Liquidation):** If the farmer sells immediately on harvest day into a depressed, glutted market, they lock in catastrophic financial losses, destroying their seasonal income and driving them into debt.
@@ -312,13 +312,13 @@ Currently, farmers lack any scientific, quantitative software tool that answers 
 Over the past decade, several academic studies and digital agricultural applications have attempted to address farm advisory:
 
 1. **Government Market Information Portals (Agmarknet, e-NAM):**  
-   Agmarknet (operated by the Directorate of Marketing and Inspection, Ministry of Agriculture) and e-NAM provide daily tabular historical price and arrival records across national mandis. While valuable as a retrospective reporting repository, these systems are purely passive and backward-looking. They offer zero forward-looking price forecasting, zero shelf-life estimation, and zero personalized decision advice.
+   Agmarknet (operated by the Directorate of Marketing and Inspection, Ministry of Agriculture) and e-NAM provide daily tabular historical price and arrival records across national markets. While valuable as a retrospective reporting repository, these systems are purely passive and backward-looking. They offer zero forward-looking price forecasting, zero shelf-life estimation, and zero personalized decision advice.
 2. **Statistical Time-Series Models (ARIMA, SARIMA, Holt-Winters):**  
-   Classic econometric literature has widely applied Autoregressive Integrated Moving Average (ARIMA) models to commodity forecasting. However, classical linear models assume stationarity and homoscedasticity, failing completely in the presence of abrupt arrival shocks, severe weather events (unseasonal monsoon rains, heatwaves), and non-linear mandi auction dynamics.
+   Classic econometric literature has widely applied Autoregressive Integrated Moving Average (ARIMA) models to commodity forecasting. However, classical linear models assume stationarity and homoscedasticity, failing completely in the presence of abrupt arrival shocks, severe weather events (unseasonal monsoon rains, heatwaves), and non-linear market auction dynamics.
 3. **Deep Learning Architectural Approaches (LSTM, GRU, Bi-LSTM):**  
-   Recent computer science research has applied Recurrent Neural Networks and Long Short-Term Memory networks to crop price forecasting. While LSTMs capture sequential dependencies, they suffer from extreme data-hunger. Local mandi records at the sub-district APMC level typically contain ~1,500 to 2,000 historical price points. When trained on small-to-medium tabular datasets, deep recurrent networks overfit severely, lack interpretability, and impose excessive inference latency and cloud hosting costs that are impractical for low-bandwidth rural deployments.
+   Recent computer science research has applied Recurrent Neural Networks and Long Short-Term Memory networks to crop price forecasting. While LSTMs capture sequential dependencies, they suffer from extreme data-hunger. Local market records at the sub-district APMC level typically contain ~1,500 to 2,000 historical price points. When trained on small-to-medium tabular datasets, deep recurrent networks overfit severely, lack interpretability, and impose excessive inference latency and cloud hosting costs that are impractical for low-bandwidth rural deployments.
 4. **Agronomic Crop Post-Harvest Studies (ICAR, CIPHET):**  
-   The Indian Council of Agricultural Research (ICAR) and Central Institute of Post-Harvest Engineering & Technology (CIPHET) have established extensive laboratory empirical models on post-harvest respiration rates, temperature quotients ($Q_{10}$), and weight loss across ambient and cold storage conditions. However, these biochemical equations have remained confined to agronomic journals and laboratory research, completely disconnected from commercial mandi price curves and software platforms.
+   The Indian Council of Agricultural Research (ICAR) and Central Institute of Post-Harvest Engineering & Technology (CIPHET) have established extensive laboratory empirical models on post-harvest respiration rates, temperature quotients ($Q_{10}$), and weight loss across ambient and cold storage conditions. However, these biochemical equations have remained confined to agronomic journals and laboratory research, completely disconnected from commercial market price curves and software platforms.
 
 ## 1.4 Identified Gaps in Literature and Existing Applications
 A systematic analysis reveals four foundational deficiencies in existing systems:
@@ -330,7 +330,7 @@ A systematic analysis reveals four foundational deficiencies in existing systems
 ## 1.5 Project Scope and Significance
 The scope of **AgriSense** is to deliver a robust, full-stack, AI-driven decision support system specifically tailored for perishable horticulture in Western Maharashtra:
 * **Target Crops:** Tomato (*Solanum lycopersicum*) and Onion (*Allium cepa*).
-* **Target Mandis:** Kolhapur, Sangli-Phale-Bhajipala, Vadgaonpeth, and Islampur APMCs.
+* **Target Markets:** Kolhapur, Sangli-Phale-Bhajipala, Vadgaonpeth, and Islampur APMCs.
 * **Forecast Horizon:** Rolling 1 to 7 days ahead.
 * **Core Output:** Definite, mathematical action recommendation (`SELL`, `HOLD`, or `PARTIAL_SELL`) with explicit holding duration, net realizable profit uplift ($\Delta\text{Uplift}\%$), break-even price thresholds, and conversational Marathi/English voice guidance.
 
@@ -375,7 +375,7 @@ AgriSense automates the real-time evaluation of this inequality for every farmer
 
 ## 3.1 Primary Functional Objectives
 1. **Automated Multi-Horizon Wholesale Price Forecasting:**  
-   To develop, validate, and deploy an automated Machine Learning pipeline utilizing **Quantile Extreme Gradient Boosting (XGBoost)** to predict daily APMC wholesale modal prices across target mandis (Kolhapur, Sangli, Vadgaonpeth, Islampur) for a 1-to-7 day forecasting horizon with over 88% weighted accuracy.
+   To develop, validate, and deploy an automated Machine Learning pipeline utilizing **Quantile Extreme Gradient Boosting (XGBoost)** to predict daily APMC wholesale modal prices across target markets (Kolhapur, Sangli, Vadgaonpeth, Islampur) for a 1-to-7 day forecasting horizon with over 88% weighted accuracy.
 2. **Empirical Post-Harvest Shelf-Life & Spoilage Simulation:**  
    To formulate an algorithmic biological decay engine based on modified **Arrhenius temperature-dependent rate kinetics ($Q_{10}$)** and relative humidity stress factors, accurately predicting daily weight shrinkage, spoilage risk, and grade discounts across four storage environments (Ambient, Ventilated Chawl, ZECC, and Cold Storage).
 3. **Dynamic Net Realizable Value (NRV) Optimization Engine:**  
@@ -445,8 +445,8 @@ The AgriSense platform is architected according to modern microservice engineeri
 
 ## 4.2 Multi-Horizon APMC Price Forecasting Engine (XGBoost)
 
-### 4.2.1 Target Datasets and Mandi Canonicalization
-Historical daily wholesale modal prices, arrival volumes, varieties, and grades were harvested across four major APMC markets in Western Maharashtra over a multi-year period (spanning November 2020 through September 2026, comprising 1,650 verified market auction days per series). To ensure seamless inter-mandi comparison, data canonicalization maps sub-mandi trading yards into standardized series keys:
+### 4.2.1 Target Datasets and Market Canonicalization
+Historical daily wholesale modal prices, arrival volumes, varieties, and grades were harvested across four major APMC markets in Western Maharashtra over a multi-year period (spanning November 2020 through September 2026, comprising 1,650 verified market auction days per series). To ensure seamless inter-market comparison, data canonicalization maps sub-market trading yards into standardized series keys:
 * Tomato: `Kolhapur_Tomato`, `Vadgaonpeth_Tomato`, and `Islampur_Tomato`.
 * Onion: `Kolhapur_Onion`, `Vadgaonpeth_Onion`, and `Sangli-Phale-Bhajipala_Onion`.
 
@@ -558,7 +558,7 @@ To ensure accessibility for rural farmers who may be uncomfortable navigating an
 
 ### 4.6.1 End-to-End Decision Optimization Flowchart
 ```
-  [Start: Farmer Submits Commodity, Mandi, Qty, Storage, Cash Need]
+  [Start: Farmer Submits Commodity, Market, Qty, Storage, Cash Need]
                                 |
                                 v
                [Fetch 7-Day Weather Forecast for District]
@@ -674,8 +674,8 @@ A multi-layered Software Testing Life Cycle (STLC) was executed to certify the c
 
 | Test ID | Module | Type | Tool | Input Condition | Expected Output | Status |
 | :---: | :--- | :---: | :---: | :--- | :--- | :---: |
-| **TC-01** | **XGBoost Inference** | Auto | Pytest | Commodity: `"Tomato"`, Mandi: `"Kolhapur"`, Horizon: `7` days | HTTP 200; 7-day quantile price array with P10, P50, P90 bounds. | **PASS** |
-| **TC-02** | **Invalid Series Guard** | Auto | Pytest | Commodity: `"Banana"`, Mandi: `"Pune"` | HTTP 422 Unprocessable Content; returns valid supported series. | **PASS** |
+| **TC-01** | **XGBoost Inference** | Auto | Pytest | Commodity: `"Tomato"`, Market: `"Kolhapur"`, Horizon: `7` days | HTTP 200; 7-day quantile price array with P10, P50, P90 bounds. | **PASS** |
+| **TC-02** | **Invalid Series Guard** | Auto | Pytest | Commodity: `"Banana"`, Market: `"Pune"` | HTTP 422 Unprocessable Content; returns valid supported series. | **PASS** |
 | **TC-03** | **Horizon Boundary** | Auto | Pytest | Horizon: `15` days (exceeds 7-day limit) | System caps or rejects horizon > 7 days with validation message. | **PASS** |
 | **TC-04** | **Arrhenius Decay** | Auto | Pytest | Tomato, 100 Qtl, Ambient storage, 7 days | Physical weight loss escalates; Spoilage risk flags `"HIGH"` by Day 6. | **PASS** |
 | **TC-05** | **Storage Mitigation** | Auto | Pytest | Onion, Ventilated Chawl vs. Ambient | Chawl storage achieves ~60% reduction in physiological decay rate. | **PASS** |
@@ -707,7 +707,7 @@ A multi-layered Software Testing Life Cycle (STLC) was executed to certify the c
 # **CHAPTER 6: RESULTS AND DISCUSSION**
 
 ## 6.1 Algorithmic Comparative Benchmark Analysis
-The proposed **XGBoost Regressor** was rigorously benchmarked against four standard baseline models across 1,650 real daily market transactions spanning Kolhapur, Sangli, Vadgaonpeth, and Islampur mandis.
+The proposed **XGBoost Regressor** was rigorously benchmarked against four standard baseline models across 1,650 real daily market transactions spanning Kolhapur, Sangli, Vadgaonpeth, and Islampur markets.
 
 | Sr.No | Algorithm / Method Used | Accuracy | Precision | MAE (₹/Qtl) | RMSE (₹/Qtl) | MASE |
 | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
@@ -721,16 +721,16 @@ The proposed **XGBoost Regressor** was rigorously benchmarked against four stand
 1. **Multiple Linear Regression** performed poorly ($\text{MASE} = 1.2451$), proving that agricultural auction prices cannot be modeled as simple linear combinations of historical prices and weather variables.
 2. While **Random Forest** achieved competitive accuracy ($85.34\%$), **XGBoost** outperformed all algorithms across all metrics, achieving an overall accuracy of **89.26%**, a directional trend precision of **86.80%**, and the lowest Mean Absolute Scaled Error ($\text{MASE} = 0.7557$). Because $\text{MASE} < 1.0$, the model decisively beats the persistence benchmark.
 
-## 6.2 Granular Commodity and Mandi-Wise Performance
+## 6.2 Granular Commodity and Market-Wise Performance
 
 ### 6.2.1 Commodity-Level Accuracy
 * **Onion (*Allium cepa*):** Achieved **92.47% accuracy** ($\text{MAPE} = 7.53\%$, $\text{MAE} = ₹130.50/\text{qtl}$). Because onions are semi-perishable with longer curing durability, price curves exhibit smoother seasonal patterns.
 * **Tomato (*Solanum lycopersicum*):** Achieved **86.06% accuracy** ($\text{MAPE} = 13.94\%$, $\text{MAE} = ₹217.53/\text{qtl}$). Tomato prices exhibit high volatility due to short harvest cycles (2–3 day flushes) and vulnerability to monsoon downpours.
 
-### 6.2.2 Mandi-Wise Price Accuracy
+### 6.2.2 Market-Wise Price Accuracy
 * **Kolhapur APMC:** Tomato Accuracy = **89.55%**, Onion Accuracy = **93.85%**. As the primary high-liquidity district hub, continuous arrival volumes ensure strong feature predictability.
 * **Sangli-Phale-Bhajipala APMC:** Onion Accuracy = **94.14%**. Being one of Western Maharashtra’s largest onion trading centers, large transaction volumes yield outstanding predictive stability.
-* **Vadgaonpeth APMC:** Tomato Accuracy = **83.27%**, Onion Accuracy = **90.49%**. Smaller feeder mandis experience sporadic arrival shocks, leading to slightly higher variance.
+* **Vadgaonpeth APMC:** Tomato Accuracy = **83.27%**, Onion Accuracy = **90.49%**. Smaller feeder markets experience sporadic arrival shocks, leading to slightly higher variance.
 
 ## 6.3 Combinatorial Scenario Analysis (Crop × Market × Storage × Need)
 
@@ -770,7 +770,7 @@ This mini-project successfully engineered, evaluated, and deployed **AgriSense**
 By bridging the gap between mathematical machine learning (Quantile XGBoost achieving $89.26\%$ accuracy), agronomic post-harvest decay kinetics (Arrhenius $Q_{10}$ weight-loss models), and microeconomic Net Realizable Value optimization, AgriSense replaces guesswork with scientific precision. Furthermore, through native Marathi localization, mobile SMS authentication, active harvest batch tracking, and Gemini-driven conversational guidance, the platform makes advanced data science genuinely accessible to rural agricultural communities. Real-world validation confirms that AgriSense delivers a measurable financial uplift of $+5.8\%$ to $+14.2\%$ per quintal.
 
 ## 7.2 Limitations of the Current System
-1. **Mandi Geographic Scope:** Currently calibrated for key APMC mandis in Kolhapur and Sangli districts; expanding to other state mandis requires local arrival dataset calibration.
+1. **Market Geographic Scope:** Currently calibrated for key APMC markets in Kolhapur and Sangli districts; expanding to other state markets requires local arrival dataset calibration.
 2. **Commodity Coverage:** Focused on Tomato and Onion; additional horticultural produce (Green Chilli, Capsicum, Pomegranate) requires crop-specific decay parameters.
 3. **Farm-Gate Storage Monitoring:** The decay model relies on ambient weather forecasts; direct IoT temperature/humidity sensors inside individual on-farm storage sheds would further sharpen precision.
 
@@ -823,7 +823,7 @@ To ground **AgriSense** in practical agrarian reality, field interviews and user
 
 ### 10.1 Qualitative Feedback Summary
 * **Shri. Ramesh Patil (Tomato Farmer, Shirol / Kolhapur):**  
-  > *"When tomato prices fall below ₹100 per crate (₹4/kg), we usually lose hope and dump our crates at the mandi entrance. AgriSense gave us a clear act-by date showing that market arrivals would taper off in 4 days, while our shaded storage could hold tomatoes for 3 days without major weight loss. Holding for 3 days allowed us to sell at ₹260 per crate, saving us from a total loss."*
+  > *"When tomato prices fall below ₹100 per crate (₹4/kg), we usually lose hope and dump our crates at the market entrance. AgriSense gave us a clear act-by date showing that market arrivals would taper off in 4 days, while our shaded storage could hold tomatoes for 3 days without major weight loss. Holding for 3 days allowed us to sell at ₹260 per crate, saving us from a total loss."*
 * **Shri. Tukaram Shinde (Onion Farmer, Tasgaon / Sangli):**  
   > *"The Marathi audio guidance in the app is very helpful for rural farmers. The app clearly told us how much price rise is needed to cover the kanda chawl cost. It calculated that holding for 5 days would give us an extra ₹300 per quintal after subtracting 2% weight loss."*
 
@@ -839,3 +839,4 @@ Field testing conducted across 12 harvested produce lots (6 Tomato lots in Kolha
 | **Farmer User Satisfaction Rating** | **4.85 / 5.00** |
 
 The customer validation conclusively proves that coupling predictive machine learning with post-harvest biological decay equations provides farmers with a measurable economic advantage, preventing distress sales and securing farm livelihoods.
+

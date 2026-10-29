@@ -162,7 +162,7 @@ function PriceMiniCard({
 
       {/* ── Key Market Price Stats ── */}
       <div style={{ padding: '10px 12px 6px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(95px, 1fr))', gap: '8px' }}>
-        {/* Today's Mandi Modal Price */}
+        {/* Today's Market Modal Price */}
         <div
           style={{
             background: isDark ? 'rgba(255,255,255,0.04)' : '#f9fafb',
@@ -172,7 +172,7 @@ function PriceMiniCard({
           }}
         >
           <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)', marginBottom: '2px', fontWeight: 600 }}>
-            {isMr ? 'सरासरी बाजारभाव' : 'Mandi Modal Rate'}
+            {isMr ? 'सरासरी बाजारभाव' : 'Market Modal Rate'}
           </div>
           <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-emerald)' }}>
             {fmt(todayPrice)}
@@ -209,7 +209,7 @@ function PriceMiniCard({
             }}
           >
             <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)', marginBottom: '2px', fontWeight: 600 }}>
-              {isMr ? 'दर मर्यादा (किमान-कमाल)' : 'Mandi Range'}
+              {isMr ? 'दर मर्यादा (किमान-कमाल)' : 'Market Range'}
             </div>
             <div style={{ fontSize: '0.86rem', fontWeight: 800, color: 'var(--text-title)' }}>
               ₹{Math.round(minPrice)} - ₹{Math.round(maxPrice)}
@@ -226,7 +226,7 @@ function PriceMiniCard({
         <div style={{ padding: '4px 12px 10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '0.64rem', fontWeight: 700, color: 'var(--text-muted)' }}>
-              {isMr ? '📅 पुढील ५ दिवसांचे अपेक्षित भाव:' : '📅 5-Day Mandi Forecast:'}
+              {isMr ? '📅 पुढील ५ दिवसांचे अपेक्षित भाव:' : '📅 5-Day Market Forecast:'}
             </span>
             <span
               style={{
@@ -411,7 +411,7 @@ function getPriceSpokenText(msg, isMr) {
     s += ` ${trendText}`;
     return s;
   } else {
-    let s = `In ${msg.market || ''} APMC mandi, today's average market price for ${msg.commodity || 'crop'} is approximately ₹${Math.round(price)} per quintal, which is ₹${perKg} per kg.`;
+    let s = `In ${msg.market || ''} APMC market, today's average market price for ${msg.commodity || 'crop'} is approximately ₹${Math.round(price)} per quintal, which is ₹${perKg} per kg.`;
     if (minKg && maxKg) {
       s += ` The rate ranges between ₹${minKg} and ₹${maxKg} per kg.`;
     }
@@ -440,7 +440,7 @@ export default function AiAssistantDrawer({
     type: 'text',
     text: lang === 'mr'
       ? 'नमस्कार! 🙏 मी **AgriSense AI कृषी मित्र** आहे.\n\nशेती, पिके, बाजारभाव किंवा कीड नियंत्रणाबद्दल विचारा. बाजारभाव विचारल्यास लाइव्ह डेटा कार्डमध्ये दाखवेन!'
-      : 'Hello! 🙏 I\'m your **AgriSense AI Assistant**.\n\nAsk about crops, mandi prices, pests or schemes. Price queries show live data cards!',
+      : 'Hello! 🙏 I\'m your **AgriSense AI Assistant**.\n\nAsk about crops, market prices, pests or schemes. Price queries show live data cards!',
     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
   });
 
@@ -465,7 +465,7 @@ export default function AiAssistantDrawer({
   // Quick chips
   const quickPrompts = isMr
     ? ['टोमॅटो भाव (कोल्हापूर व सांगली)', 'कांदा भाव (कोल्हापूर व सांगली)', 'सांगली टोमॅटो भाव', 'टोमॅटो कीड नियंत्रण', 'PM-किसान योजना']
-    : ['Tomato price (Kolhapur & Sangli)', 'Onion price (Kolhapur & Sangli)', 'Sangli Mandi Price', 'Tomato pest control', 'PM-KISAN'];
+    : ['Tomato price (Kolhapur & Sangli)', 'Onion price (Kolhapur & Sangli)', 'Sangli Market Price', 'Tomato pest control', 'PM-KISAN'];
 
   // Scroll on new message
   useEffect(() => {
@@ -666,7 +666,7 @@ export default function AiAssistantDrawer({
             </div>
             <div style={{ fontSize: '0.66rem', color: 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', gap: '3px' }}>
               <Sparkles size={9} />
-              {isMr ? 'Gemini 3.5 • लाइव्ह बाजारभाव + सल्ला' : 'Gemini 3.5 • Live Mandi Prices + Advice'}
+              {isMr ? 'Gemini 3.5 • लाइव्ह बाजारभाव + सल्ला' : 'Gemini 3.5 • Live Market Prices + Advice'}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>

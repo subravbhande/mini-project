@@ -283,7 +283,7 @@ export default function PriceAdvisoryResult({ result, formData, lang, theme, onO
               </>
             ) : (
               <>
-                Mandi rates must rise by at least{' '}
+                Market rates must rise by at least{' '}
                 <strong style={{ color: 'var(--text-title)' }}>+{Math.max(0, Math.round(breakEvenPct))}% (₹{Math.round(breakEvenPrice)}/qtl)</strong>{' '}
                 to justify holding against weight loss and storage fees.
               </>
