@@ -68,6 +68,7 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
       setSuccessMsg(isMr ? 'पडताळणी कोड (OTP) खाली तयार झाला आहे.' : 'Verification OTP generated below.');
       if (res.devOtp) {
         setDevOtp(res.devOtp);
+        setOtp(res.devOtp);
       }
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Failed to send OTP.');
@@ -250,11 +251,53 @@ export default function AuthModal({ isOpen, onClose, lang = 'mr', theme = 'dark'
             fontSize: '0.8rem',
             marginBottom: '14px',
             display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
+            flexDirection: 'column',
+            gap: '6px',
           }}>
-            <AlertTriangle size={15} />
-            <span>{error}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <AlertTriangle size={15} style={{ flexShrink: 0 }} />
+              <span>{error}</span>
+            </div>
+            {(error.includes('आधीच') || error.toLowerCase().includes('already exists')) && mode !== 'login' && (
+              <button
+                type="button"
+                onClick={() => resetFormState('login')}
+                style={{
+                  alignSelf: 'flex-start',
+                  background: 'var(--accent-green)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '4px 10px',
+                  fontSize: '0.74rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  marginTop: '2px',
+                }}
+              >
+                {isMr ? 'येथे क्लिक करून लॉगिन करा' : 'Click here to Sign In'}
+              </button>
+            )}
+            {(error.includes('नोंदणीकृत नाही') || error.toLowerCase().includes('not found') || error.toLowerCase().includes('register')) && mode === 'login' && (
+              <button
+                type="button"
+                onClick={() => resetFormState('register')}
+                style={{
+                  alignSelf: 'flex-start',
+                  background: 'var(--accent-green)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '4px 10px',
+                  fontSize: '0.74rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  marginTop: '2px',
+                }}
+              >
+                {isMr ? 'येथे क्लिक करून नवीन खाते तयार करा' : 'Click here to Register'}
+              </button>
+            )}
           </div>
         )}
 

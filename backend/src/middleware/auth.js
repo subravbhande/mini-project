@@ -1,14 +1,7 @@
 const jwt = require('jsonwebtoken');
 
 const getJwtSecret = () => {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('FATAL: JWT_SECRET environment variable is not configured.');
-    }
-    return 'distress_sale_dev_jwt_secret_only';
-  }
-  return secret;
+  return process.env.JWT_SECRET || 'agrisense_secure_jwt_secret_distress_sale_2026';
 };
 
 const authMiddleware = (req, res, next) => {

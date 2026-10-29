@@ -110,6 +110,9 @@ app.use("/api/batch", batchRoutes);
 
 // 6. Deep System Health Check (Database + ML Service + Backend)
 app.get("/api/health", async (req, res) => {
+  if (mongoose.connection.readyState !== 1) {
+    try { await connectDB(); } catch (e) {}
+  }
   const dbStatus = mongoose.connection.readyState === 1 ? "connected" : "disconnected";
   const mlStatus = await mlClient.getHealth();
 

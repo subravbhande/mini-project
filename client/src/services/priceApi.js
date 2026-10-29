@@ -7,11 +7,16 @@ if (configuredUrl.includes("ml-service")) {
   configuredUrl = LIVE_BACKEND_URL;
 }
 
+// Check if running on localhost / 127.0.0.1
+const isLocalhost =
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1" ||
+    window.location.hostname === "");
+
 const BASE_URL =
   configuredUrl ||
-  (typeof window !== "undefined" && window.location.hostname.includes("vercel.app")
-    ? LIVE_BACKEND_URL
-    : "http://localhost:5000");
+  (!isLocalhost ? LIVE_BACKEND_URL : "http://localhost:5000");
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -29,6 +34,29 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Automatic fallback from unreachable local backend (port 5000) to cloud backend
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error.config;
+    if (
+      config &&
+      !config._fallbackTried &&
+      config.baseURL === "http://localhost:5000" &&
+      (!error.response || error.code === "ERR_NETWORK" || error.code === "ECONNREFUSED")
+    ) {
+      console.warn(
+        "[API] Localhost backend unreachable. Seamlessly retrying request against live cloud backend:",
+        LIVE_BACKEND_URL
+      );
+      config._fallbackTried = true;
+      config.baseURL = LIVE_BACKEND_URL;
+      return api(config);
+    }
+    return Promise.reject(error);
+  }
+);
 
 /**
  * Fetch system health status (Database connection + ML model status)
@@ -132,7 +160,7 @@ export async function recordSaleOutcomeApi(payload) {
 
 export async function fetchHistorySummaryApi() {
   const res = await api.get("/api/batch/stats/summary");
-  return res.data.data;
+  return res.data;
 }
 
 export default api;
