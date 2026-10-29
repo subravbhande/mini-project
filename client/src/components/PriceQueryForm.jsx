@@ -60,6 +60,13 @@ export default function PriceQueryForm({
     }
   };
 
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const getPastDateStr = (daysAgo) => {
+    const d = new Date();
+    d.setDate(d.getDate() - daysAgo);
+    return d.toISOString().slice(0, 10);
+  };
+
   const addQty = (amount) => {
     setFormData((prev) => ({
       ...prev,
@@ -74,6 +81,7 @@ export default function PriceQueryForm({
       market: mkt,
       district: dist,
       quantity_quintals: qty,
+      harvest_date: todayStr,
       horizon_days: 5,
       storage_type: crop === 'Onion' ? 'ventilated_chawl' : 'ambient',
       liquidity_need: 'normal',
@@ -321,7 +329,83 @@ export default function PriceQueryForm({
           </div>
         </div>
 
-        {/* Step 4: Storage & Liquidity */}
+        {/* Step 4: Harvest Date (काढणीची तारीख) */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+            <label style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              color: 'var(--text-muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em'
+            }}>
+              <Calendar size={14} color="var(--accent-green)" />
+              <span>4. {isMr ? 'काढणीची तारीख (Harvest Date)' : 'Harvest Date'}</span>
+            </label>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              {(() => {
+                const hDate = formData.harvest_date || todayStr;
+                const diffDays = Math.max(0, Math.round((new Date(todayStr) - new Date(hDate)) / (1000 * 60 * 60 * 24)));
+                if (diffDays === 0) return isMr ? 'आजची ताजी काढणी' : 'Fresh (0 days)';
+                return isMr ? `${diffDays} दिवस जुना माल` : `${diffDays}d in storage`;
+              })()}
+            </span>
+          </div>
+
+          <input
+            type="date"
+            max={todayStr}
+            value={formData.harvest_date || todayStr}
+            onChange={(e) => setFormData((prev) => ({ ...prev, harvest_date: e.target.value }))}
+            className="input-base"
+            style={{
+              width: '100%',
+              fontSize: '0.92rem',
+              fontWeight: 600,
+              padding: '10px 14px',
+              colorScheme: isDark ? 'dark' : 'light',
+            }}
+            required
+          />
+
+          {/* Quick Harvest Shortcuts */}
+          <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
+            {[
+              { days: 0, label: isMr ? 'आजची काढणी (Fresh)' : 'Today (Fresh)' },
+              { days: 1, label: isMr ? 'काल (1 दिवस)' : 'Yesterday (1d)' },
+              { days: 2, label: isMr ? '२ दिवस आधी' : '2 days ago' },
+              { days: 3, label: isMr ? '३ दिवस आधी' : '3 days ago' },
+            ].map((p) => {
+              const pDate = getPastDateStr(p.days);
+              const isSelected = (formData.harvest_date || todayStr) === pDate;
+              return (
+                <button
+                  key={p.days}
+                  type="button"
+                  onClick={() => setFormData((prev) => ({ ...prev, harvest_date: pDate }))}
+                  className="clickable-pill"
+                  style={{
+                    background: isSelected ? 'var(--bg-pill)' : 'var(--bg-subtle)',
+                    border: isSelected ? '1.5px solid var(--accent-green)' : '1px solid var(--border-subtle)',
+                    borderRadius: '8px',
+                    color: isSelected ? 'var(--text-emerald)' : 'var(--text-body)',
+                    padding: '4px 10px',
+                    fontSize: '0.74rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Step 5: Storage & Liquidity */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
           <div>
             <label style={{
@@ -333,7 +417,7 @@ export default function PriceQueryForm({
               textTransform: 'uppercase',
               letterSpacing: '0.04em'
             }}>
-              4. {isMr ? 'साठवणूक पद्धत' : 'Storage'}
+              5. {isMr ? 'साठवणूक पद्धत' : 'Storage'}
             </label>
             <select
               value={formData.storage_type || (formData.commodity === 'Onion' ? 'ventilated_chawl' : 'ambient')}
@@ -359,7 +443,7 @@ export default function PriceQueryForm({
               textTransform: 'uppercase',
               letterSpacing: '0.04em'
             }}>
-              5. {isMr ? 'पैशांची गरज' : 'Cash Need'}
+              6. {isMr ? 'पैशांची गरज' : 'Cash Need'}
             </label>
             <select
               value={formData.liquidity_need || 'normal'}
@@ -373,7 +457,7 @@ export default function PriceQueryForm({
           </div>
         </div>
 
-        {/* Step 5: Horizon (Segmented iOS Toggle) */}
+        {/* Step 7: Horizon (Segmented iOS Toggle) */}
         <div>
           <label style={{
             display: 'block',
@@ -384,7 +468,7 @@ export default function PriceQueryForm({
             textTransform: 'uppercase',
             letterSpacing: '0.04em'
           }}>
-            6. {isMr ? 'अंदाज कालावधी' : 'Forecast Horizon'}
+            7. {isMr ? 'अंदाज कालावधी' : 'Forecast Horizon'}
           </label>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             <button

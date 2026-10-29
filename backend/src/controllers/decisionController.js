@@ -45,6 +45,7 @@ exports.evaluateDirect = async (req, res) => {
         district: req.body.district || 'Kolhapur',
         initial_quantity_quintals: Number(req.body.quantityQuintals || 50),
         storage_type: req.body.storageType || 'ambient',
+        harvestDate: req.body.harvestDate || req.body.harvest_date,
         liquidity_need: req.body.liquidityNeed || 'normal',
         as_of: req.body.as_of || req.body.start_date,
       });

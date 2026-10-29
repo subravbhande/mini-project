@@ -54,6 +54,7 @@ export default function PriceAdvisoryResult({ result, formData, lang, theme, onO
         quantityQuintals: Number(q),
         storageType: st,
         liquidityNeed: ln,
+        harvestDate: formData?.harvest_date || new Date().toISOString().slice(0, 10),
       });
       setSaveSuccess(true);
       if (onBatchSaved) onBatchSaved();
@@ -158,7 +159,7 @@ export default function PriceAdvisoryResult({ result, formData, lang, theme, onO
             <strong style={{ color: 'var(--text-gold)' }}>{isMr ? 'बाजार माहिती सावधगिरी:' : 'Notice:'}</strong>{' '}
             <span style={{ color: 'var(--text-body)' }}>
               {isMr
-                ? `शेवटची अधिकृत मंडी नोंद ${dataAsOf} रोजीची आहे (${daysStale} दिवस जुनी).`
+                ? `शेवटची अधिकृत बाजार नोंद ${dataAsOf} रोजीची आहे (${daysStale} दिवस जुनी).`
                 : `Latest official APMC report date is ${dataAsOf} (${daysStale} days old).`}
             </span>
           </div>
@@ -302,7 +303,7 @@ export default function PriceAdvisoryResult({ result, formData, lang, theme, onO
           padding: '14px'
         }}>
           <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 700 }}>
-            {isMr ? 'आजचा मंडी भाव' : "Today's Rate"}
+            {isMr ? 'आजचा बाजार भाव' : "Today's Market Rate"}
           </div>
           <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-title)' }}>
             ₹{Math.round(todayPrice).toLocaleString()}

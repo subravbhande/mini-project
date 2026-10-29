@@ -142,10 +142,12 @@ function generatePriceForecast({ commodity, market, district, quantityQuintals =
 /**
  * Generate 5-day decay simulation schedule
  */
-function generateDecaySimulation({ crop, quantityQuintals = 50, storageType = 'ambient', district, asOf, horizonDays = 5 }) {
+function generateDecaySimulation({ crop, quantityQuintals = 50, storageType = 'ambient', district, harvestDate, asOf, horizonDays = 5 }) {
   const normCrop = String(crop || 'tomato').toLowerCase();
   const storage = STORAGE_CONFIG[storageType] || STORAGE_CONFIG.ambient;
   const startDate = asOf ? new Date(asOf) : new Date();
+  const hDate = harvestDate ? new Date(harvestDate) : startDate;
+  const elapsedDays = Math.max(0, Math.round((startDate - hDate) / (1000 * 60 * 60 * 24)));
 
   // Baseline daily physiological weight loss & spoilage rates
   const baseWeightLossRate = normCrop === 'tomato' ? 0.045 : 0.015;
@@ -155,7 +157,14 @@ function generateDecaySimulation({ crop, quantityQuintals = 50, storageType = 'a
   const adjSpoilage = baseSpoilageRate * storage.decayFactor;
 
   let currentWeight = quantityQuintals;
-  let cumLossPct = 0;
+  if (elapsedDays > 0) {
+    for (let d = 0; d < elapsedDays; d++) {
+      const priorLoss = currentWeight * (adjWeightLoss + adjSpoilage);
+      currentWeight = Math.max(0, currentWeight - priorLoss);
+    }
+  }
+
+  let cumLossPct = ((quantityQuintals - currentWeight) / quantityQuintals) * 100;
   const dailySchedule = [];
 
   for (let i = 1; i <= horizonDays; i++) {
@@ -167,8 +176,18 @@ function generateDecaySimulation({ crop, quantityQuintals = 50, storageType = 'a
     currentWeight = Math.max(0, currentWeight - (dailyPhysicalLoss + dailySpoil));
 
     cumLossPct = ((quantityQuintals - currentWeight) / quantityQuintals) * 100;
-    const qualityDiscount = Math.min(60, Math.round(cumLossPct * 0.8));
+    const effectiveAge = elapsedDays + i;
+    const qualityDiscount = Math.min(60, Math.round(cumLossPct * 0.8 + (effectiveAge > 3 ? (effectiveAge - 3) * 1.5 : 0)));
     const valueMultiplier = Math.max(0.1, Number(((1 - (cumLossPct / 100)) * (1 - (qualityDiscount / 100))).toFixed(4)));
+
+    let riskLevel = 'LOW';
+    if (normCrop === 'tomato') {
+      if (cumLossPct > 20 || effectiveAge >= 6) riskLevel = 'HIGH';
+      else if (cumLossPct > 10 || effectiveAge >= 3) riskLevel = 'MEDIUM';
+    } else {
+      if (cumLossPct > 20 || effectiveAge >= 14) riskLevel = 'HIGH';
+      else if (cumLossPct > 10 || effectiveAge >= 7) riskLevel = 'MEDIUM';
+    }
 
     dailySchedule.push({
       day: i,
@@ -183,7 +202,7 @@ function generateDecaySimulation({ crop, quantityQuintals = 50, storageType = 'a
       cumulative_weight_loss_pct: Number(cumLossPct.toFixed(2)),
       quality_discount_pct: qualityDiscount,
       effective_value_multiplier: valueMultiplier,
-      risk_level: cumLossPct > 20 ? 'HIGH' : (cumLossPct > 10 ? 'MEDIUM' : 'LOW'),
+      risk_level: riskLevel,
     });
   }
 
@@ -216,21 +235,21 @@ function generateDecaySimulation({ crop, quantityQuintals = 50, storageType = 'a
 /**
  * Generate full Distress-Sale Timing Decision
  */
-function generateTimingDecision(params) {
-  const {
-    commodity = 'tomato',
-    market = 'Kolhapur',
-    district = 'Kolhapur',
-    initial_quantity_quintals = 50,
-    storage_type = 'ambient',
-    liquidity_need = 'normal',
-    as_of,
-  } = params;
+function generateTimingDecision(params = {}) {
+  const commodity = params.commodity || 'tomato';
+  const market = params.market || 'Kolhapur';
+  const district = params.district || 'Kolhapur';
+  const storage_type = params.storage_type || params.storageType || 'ambient';
+  const initial_quantity_quintals = params.initial_quantity_quintals || params.quantityQuintals || 50;
+  const liquidity_need = params.liquidity_need || params.liquidityNeed || 'normal';
+  const harvest_date = params.harvest_date || params.harvestDate;
+  const as_of = params.as_of || params.asOf;
 
   const quantity = Number(initial_quantity_quintals) || 50;
   const normCrop = String(commodity).toLowerCase();
   const cropCapitalized = normCrop.charAt(0).toUpperCase() + normCrop.slice(1);
   const startDate = as_of ? new Date(as_of) : new Date();
+  const effectiveHarvestDate = harvest_date || formatDate(startDate);
 
   const priceForecast = generatePriceForecast({
     commodity: normCrop,
@@ -246,6 +265,7 @@ function generateTimingDecision(params) {
     quantityQuintals: quantity,
     storageType: storage_type,
     district,
+    harvestDate: effectiveHarvestDate,
     asOf: formatDate(startDate),
     horizonDays: 5,
   });

@@ -43,6 +43,7 @@ function App() {
     storage_type: 'ambient',
     liquidity_need: 'normal',
     horizon_days: 5,
+    harvest_date: new Date().toISOString().slice(0, 10),
   });
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -102,6 +103,8 @@ function App() {
         quantityQuintals: Number(formData.quantity_quintals) || 50,
         storageType: formData.storage_type || 'ambient',
         liquidityNeed: formData.liquidity_need || 'normal',
+        harvestDate: formData.harvest_date || new Date().toISOString().slice(0, 10),
+        forecastHorizonDays: Math.min(Number(formData.horizon_days) || 5, 5),
       });
       setResult(data);
     } catch (err) {
@@ -112,6 +115,7 @@ function App() {
           market: formData.market,
           district: formData.district,
           quantity_quintals: Number(formData.quantity_quintals) || 50,
+          harvest_date: formData.harvest_date || new Date().toISOString().slice(0, 10),
           horizon_days: Math.min(Number(formData.horizon_days) || 5, 5),
         });
         setResult(fallbackData);
