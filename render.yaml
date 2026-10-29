@@ -45,10 +45,7 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: ML_SERVICE_URL
-        fromService:
-          type: web
-          name: agrisense-ml-service
-          property: host
+        sync: false
       - key: GEMINI_API_KEY
         sync: false
       - key: OPENWEATHER_API_KEY

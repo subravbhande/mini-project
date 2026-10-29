@@ -1,18 +1,18 @@
 {
-  "updated_at": "2026-10-27T16:25:11.874754",
-  "total_samples": 44,
-  "recent_samples": 44,
-  "overall_mape": 1.96,
-  "recent_mape": 1.96,
-  "overall_mae": 22.26,
+  "updated_at": "2026-10-29T09:26:23.323445",
+  "total_samples": 113,
+  "recent_samples": 110,
+  "overall_mape": 3.3,
+  "recent_mape": 3.39,
+  "overall_mae": 34.58,
   "band_coverage_pct": 100.0,
   "drift_detected": false,
   "series_bias": {
     "Onion_Kolhapur": {
-      "samples": 4,
-      "mean_error": 18.0,
-      "bias_correction": 9.0,
-      "mape": 1.0,
+      "samples": 8,
+      "mean_error": -0.83,
+      "bias_correction": -0.41,
+      "mape": 0.85,
       "band_hit_rate": 100.0
     },
     "Onion_Sangli-Phale-Bhajipala": {
@@ -30,17 +30,17 @@
       "band_hit_rate": 100.0
     },
     "Tomato_Kolhapur": {
-      "samples": 28,
-      "mean_error": -18.27,
-      "bias_correction": -9.13,
-      "mape": 2.44,
+      "samples": 64,
+      "mean_error": -0.75,
+      "bias_correction": -0.37,
+      "mape": 1.79,
       "band_hit_rate": 100.0
     },
     "Tomato_Vadgaonpeth": {
-      "samples": 4,
-      "mean_error": 18.0,
-      "bias_correction": 9.0,
-      "mape": 1.5,
+      "samples": 30,
+      "mean_error": -73.36,
+      "bias_correction": -36.68,
+      "mape": 8.13,
       "band_hit_rate": 100.0
     }
   }

@@ -2,6 +2,7 @@ const CropBatch = require('../models/CropBatch');
 const Decision = require('../models/Decision');
 const Outcome = require('../models/Outcome');
 const mlClient = require('../services/mlClient');
+const fallbackEngine = require('../services/fallbackEngine');
 
 exports.evaluateDirect = async (req, res) => {
   try {
@@ -24,10 +25,21 @@ exports.evaluateDirect = async (req, res) => {
 
     res.json({ success: true, data: mlDecision });
   } catch (err) {
-    const status = err.response?.status || 500;
-    const message = err.response?.data?.detail?.error || err.response?.data?.message || err.message;
-    const valid = err.response?.data?.detail?.valid;
-    res.status(status).json({ success: false, message, valid });
+    console.warn('[DecisionController] Upstream error in evaluateDirect, activating embedded fallback:', err.message);
+    try {
+      const fallbackData = fallbackEngine.generateTimingDecision({
+        commodity: req.body.commodity || 'tomato',
+        market: req.body.market || 'Kolhapur',
+        district: req.body.district || 'Kolhapur',
+        initial_quantity_quintals: Number(req.body.quantityQuintals || 50),
+        storage_type: req.body.storageType || 'ambient',
+        liquidity_need: req.body.liquidityNeed || 'normal',
+        as_of: req.body.as_of || req.body.start_date,
+      });
+      res.json({ success: true, data: fallbackData, fallback: true });
+    } catch (fallbackErr) {
+      res.status(500).json({ success: false, message: 'Failed to generate advisory decision.' });
+    }
   }
 };
 

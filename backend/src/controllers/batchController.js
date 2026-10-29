@@ -140,12 +140,15 @@ exports.getHistorySummary = async (req, res) => {
     for (const out of outcomes) {
       totalRealizedRevenue += (out.actualRevenue || 0);
 
-      const decision = await Decision.findOne({ batchId: out.batchId }).sort({ createdAt: 1 });
-      if (decision) {
-        const baselineRev = decision.nrvToday || 0;
-        const uplift = (out.actualRevenue || 0) - baselineRev;
-        totalRealizedUplift += uplift;
-        if (uplift >= 0) profitableSalesCount++;
+      const batchId = out.batchId?._id || out.batchId;
+      if (batchId) {
+        const decision = await Decision.findOne({ batchId }).sort({ createdAt: 1 });
+        if (decision) {
+          const baselineRev = decision.nrvToday || 0;
+          const uplift = (out.actualRevenue || 0) - baselineRev;
+          totalRealizedUplift += uplift;
+          if (uplift >= 0) profitableSalesCount++;
+        }
       }
     }
 

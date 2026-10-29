@@ -4,7 +4,6 @@ import { X, Wallet, AlertTriangle, Calendar, Banknote, Scale, FileText } from 'l
 
 export default function RecordSaleModal({ isOpen, onClose, batch, lang = 'mr', theme = 'dark', onSuccess }) {
   const isMr = lang === 'mr';
-  const isDark = theme === 'dark';
 
   const [saleDate, setSaleDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [actualPrice, setActualPrice] = useState('');

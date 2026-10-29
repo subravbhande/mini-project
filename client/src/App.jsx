@@ -9,7 +9,7 @@ import AgriLoader from './components/AgriLoader';
 import AiAssistantDrawer from './components/AiAssistantDrawer';
 import { useAuth } from './context/AuthContext';
 import { fetchMarkets, fetchPriceForecast, evaluateTimingDecision, fetchHealth } from './services/priceApi';
-import { Lock, Wheat, AlertTriangle, Sprout, Bot, Sparkles } from 'lucide-react';
+import { Lock, AlertTriangle, Sprout, Bot } from 'lucide-react';
 import './App.css';
 
 
@@ -21,6 +21,7 @@ function App() {
   const [assistantOpen, setAssistantOpen] = useState(false);
 
   const [lang, setLang] = useState('mr'); // default to Marathi for farmer accessibility
+  const isMr = lang === 'mr';
 
   const [theme, setTheme] = useState(() => {
     try {
@@ -116,11 +117,18 @@ function App() {
         setResult(fallbackData);
       } catch (fallbackErr) {
         console.error('Forecast request failed:', fallbackErr);
-        const msg =
+        let msg =
           fallbackErr.response?.data?.message ||
           fallbackErr.response?.data?.error ||
           fallbackErr.message ||
           'Failed to connect to backend service.';
+
+        const is502 = fallbackErr.response?.status === 502 || String(msg).includes('502');
+        if (is502) {
+          msg = isMr
+            ? 'क्लाउड सर्व्हर सुरू होत आहे (Render Cold Start). कृपया १०-१५ सेकंद थांबा आणि पुन्हा प्रयत्न करा.'
+            : 'Cloud server is spinning up (Render Cold Start). Please wait 10-15 seconds and click Retry.';
+        }
         setError(msg);
       }
     } finally {
@@ -131,6 +139,8 @@ function App() {
   // Run initial forecast automatically once on mount
   useEffect(() => {
     let active = true;
+    let retried = false;
+
     async function runInitial() {
       setLoading(true);
       setError(null);
@@ -143,7 +153,10 @@ function App() {
           storageType: 'ambient',
           liquidityNeed: 'normal',
         });
-        if (active) setResult(data);
+        if (active) {
+          setResult(data);
+          setError(null);
+        }
       } catch (err) {
         console.warn('Initial decision evaluate warning, trying fallback:', err.message);
         try {
@@ -154,9 +167,32 @@ function App() {
             quantity_quintals: 50,
             horizon_days: 5,
           });
-          if (active) setResult(fallbackData);
+          if (active) {
+            setResult(fallbackData);
+            setError(null);
+          }
         } catch (fErr) {
-          if (active) setError(fErr.message || 'Failed to connect to backend service.');
+          if (active) {
+            const is502 = fErr.response?.status === 502 || String(fErr.message).includes('502');
+            if (is502 && !retried) {
+              retried = true;
+              setError(
+                isMr
+                  ? 'क्लाउड सर्व्हर सुरू होत आहे (Render Cold Start). काही सेकंदात आपोआप कनेक्ट होईल...'
+                  : 'Cloud server is waking up (Render Cold Start). Reconnecting automatically in a few seconds...'
+              );
+              setTimeout(() => {
+                if (active) runInitial();
+              }, 4000);
+            } else {
+              const friendlyMsg = is502
+                ? (isMr
+                  ? 'क्लाउड सर्व्हर सुरू होत आहे. कृपया "पुन्हा प्रयत्न करा" बटणावर क्लिक करा.'
+                  : 'Cloud server is spinning up. Please click "Retry" below.')
+                : (fErr.response?.data?.message || fErr.message || 'Failed to connect to backend service.');
+              setError(friendlyMsg);
+            }
+          }
         }
       } finally {
         if (active) setLoading(false);
@@ -167,8 +203,6 @@ function App() {
       active = false;
     };
   }, []);
-
-  const isMr = lang === 'mr';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative' }}>

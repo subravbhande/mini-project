@@ -2,6 +2,7 @@ const express = require("express");
 const router  = express.Router();
 const mlClient = require("../services/mlClient");
 const weatherService = require("../services/weatherService");
+const fallbackEngine = require("../services/fallbackEngine");
 
 /**
  * POST /api/price/forecast
@@ -70,10 +71,20 @@ router.post("/forecast", async (req, res) => {
 
     res.json({ success: true, data: forecast });
   } catch (err) {
-    console.error("[PriceForecast Error]", err.message);
-    const statusCode = err.response?.status || 500;
-    const errorMsg = err.response?.data?.detail?.error || err.message || "Failed to generate price forecast.";
-    res.status(statusCode).json({ success: false, error: errorMsg });
+    console.warn("[PriceForecast] Upstream error, activating embedded fallback:", err.message);
+    try {
+      const fallbackForecast = fallbackEngine.generatePriceForecast({
+        commodity: normCommodity,
+        market,
+        district,
+        quantityQuintals: quantity_quintals ? parseFloat(quantity_quintals) : 50,
+        horizonDays: parseInt(horizon_days) || 5,
+        asOf: start_date || req.body.as_of || null,
+      });
+      res.json({ success: true, data: fallbackForecast, fallback: true });
+    } catch (fErr) {
+      res.status(500).json({ success: false, error: "Failed to generate price forecast." });
+    }
   }
 });
 

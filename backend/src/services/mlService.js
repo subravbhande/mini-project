@@ -16,15 +16,31 @@ const SCRIPT = path.join(ML_ROOT, "predict_api.py");
  */
 function runPythonModel(params) {
   return new Promise((resolve, reject) => {
-    const proc = spawn(PYTHON, [SCRIPT], { cwd: ML_ROOT });
+    let proc;
+    try {
+      proc = spawn(PYTHON, [SCRIPT], { cwd: ML_ROOT });
+    } catch (spawnErr) {
+      return reject(spawnErr);
+    }
+
+    const timer = setTimeout(() => {
+      try { proc.kill(); } catch (e) {}
+      reject(new Error("Python ML model timed out after 45s"));
+    }, 45000);
 
     let stdout = "";
     let stderr = "";
+
+    proc.on("error", (err) => {
+      clearTimeout(timer);
+      reject(err);
+    });
 
     proc.stdout.on("data", (d) => (stdout += d.toString()));
     proc.stderr.on("data", (d) => (stderr += d.toString()));
 
     proc.on("close", (code) => {
+      clearTimeout(timer);
       if (code !== 0) {
         return reject(new Error(`ML process failed (code ${code}): ${stderr}`));
       }

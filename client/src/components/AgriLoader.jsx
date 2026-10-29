@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sprout, Sun, CloudRain } from 'lucide-react';
+import { Sprout } from 'lucide-react';
 
 export default function AgriLoader({ lang = 'en', compact = false, customMessage = null }) {
   const isMr = lang === 'mr';

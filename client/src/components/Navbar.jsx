@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Sprout, BarChart3, ClipboardList, Lock, User, LogOut, Sun, Moon, ChevronDown, Bot, Sparkles } from 'lucide-react';
+import { Sprout, BarChart3, ClipboardList, Lock, User, LogOut, Sun, Moon, ChevronDown, Bot } from 'lucide-react';
 
 export default function Navbar({
   lang,
   setLang,
-  systemStatus,
+  systemStatus: _systemStatus,
   theme,
   toggleTheme,
   currentView = 'advisory',

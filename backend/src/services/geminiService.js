@@ -2,14 +2,22 @@ const axios = require("axios");
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-const CANDIDATE_MODELS = [
-  "models/gemini-3.1-flash-lite",
-  "models/gemini-3.5-flash",
-  "models/gemini-3.6-flash",
-  "models/gemini-3.1-flash-lite-preview",
-  "models/gemini-3-flash-preview",
-  "models/gemini-flash-lite-latest",
+const configuredModel = process.env.GEMINI_MODEL
+  ? (process.env.GEMINI_MODEL.startsWith('models/') ? process.env.GEMINI_MODEL : 'models/' + process.env.GEMINI_MODEL)
+  : null;
+
+const DEFAULT_MODELS = [
+  'models/gemini-3.1-flash-lite',
+  'models/gemini-3.5-flash',
+  'models/gemini-3.6-flash',
+  'models/gemini-3.1-flash-lite-preview',
+  'models/gemini-3-flash-preview',
+  'models/gemini-flash-lite-latest',
 ];
+
+const CANDIDATE_MODELS = configuredModel
+  ? [configuredModel, ...DEFAULT_MODELS.filter((m) => m !== configuredModel)]
+  : DEFAULT_MODELS;
 
 const SYSTEM_INSTRUCTION = `
 You are AgriSense AI Assistant (कृषी मित्र), a concise agricultural AI advisor for Indian farmers and citizens.

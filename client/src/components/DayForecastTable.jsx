@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ClipboardList, Star, AlertTriangle, TrendingUp, TrendingDown, Thermometer, CloudRain, Sun } from 'lucide-react';
+import { ClipboardList, Star, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
 
 export default function DayForecastTable({ dailyForecasts, bestSellDate, lang, theme }) {
   const isMr = lang === 'mr';
-  const isDark = theme === 'dark';
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
