@@ -60,12 +60,36 @@ const CROP_ALIASES = {
 const MARKET_ALIASES = {
   'कोल्हापूर': 'Kolhapur', 'kolhapur': 'Kolhapur',
   'सांगली': 'Sangli', 'sangli': 'Sangli',
+  'इस्लामपूर': 'Islampur', 'islampur': 'Islampur',
+  'वडगाव': 'Vadgaonpeth', 'vadgaon': 'Vadgaonpeth', 'vadgaonpeth': 'Vadgaonpeth',
   'नाशिक': 'Nashik', 'nashik': 'Nashik', 'nasik': 'Nashik',
   'पुणे': 'Pune', 'pune': 'Pune',
   'सोलापूर': 'Solapur', 'solapur': 'Solapur',
   'औरंगाबाद': 'Aurangabad', 'aurangabad': 'Aurangabad',
   'नागपूर': 'Nagpur', 'nagpur': 'Nagpur',
 };
+
+export function getMarketsForCommodity(commodity) {
+  const norm = String(commodity || 'Tomato').toLowerCase();
+  const isOnion = norm === 'onion' || norm === 'कांदा';
+
+  return {
+    Kolhapur: {
+      key: 'Kolhapur',
+      market: 'Kolhapur',
+      district: 'Kolhapur',
+      labelMr: 'कोल्हापूर APMC',
+      labelEn: 'Kolhapur APMC',
+    },
+    Sangli: {
+      key: 'Sangli',
+      market: isOnion ? 'Sangli-Phale-Bhajipala' : 'Islampur',
+      district: 'Sangli',
+      labelMr: isOnion ? 'सांगली APMC' : 'सांगली (इस्लामपूर) APMC',
+      labelEn: isOnion ? 'Sangli APMC' : 'Sangli (Islampur) APMC',
+    },
+  };
+}
 
 /**
  * Check if the query is price/decision-related
@@ -113,26 +137,8 @@ function extractCropAndMarket(message, defaultFormData) {
 /**
  * Fetch price advisory from the AgriSense backend
  */
-export async function fetchPriceAdvisoryForChat(message, formData) {
-  const { commodity, market, district } = extractCropAndMarket(message, formData);
+async function fetchSingleMarketAdvisory(commodity, market, district, formData) {
   const cacheKey = `${commodity.toLowerCase()}_${market.toLowerCase()}`;
-
-  // 1. Check if the main app already computed result for this crop & market
-  if (
-    formData?.activeResult &&
-    String(formData?.commodity || '').toLowerCase() === commodity.toLowerCase() &&
-    String(formData?.market || '').toLowerCase() === market.toLowerCase()
-  ) {
-    return {
-      type: 'price_result',
-      commodity,
-      market,
-      district,
-      data: formData.activeResult,
-    };
-  }
-
-  // 2. Check in-memory cache (valid for 5 mins)
   const cached = priceCache.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < 300000) {
     return cached.result;
@@ -156,18 +162,11 @@ export async function fetchPriceAdvisoryForChat(message, formData) {
       { headers, timeout: 35000 }
     );
     const data = res.data?.data;
-    if (!data) throw new Error('No data returned');
-    const resultObj = {
-      type: 'price_result',
-      commodity,
-      market,
-      district,
-      data,
-    };
-    priceCache.set(cacheKey, { result: resultObj, timestamp: Date.now() });
-    return resultObj;
-  } catch (err) {
-    // Fall back to price forecast endpoint
+    if (data) {
+      priceCache.set(cacheKey, { result: data, timestamp: Date.now() });
+      return data;
+    }
+  } catch {
     try {
       const res = await axios.post(
         `${BASE_URL}/api/price/forecast`,
@@ -175,20 +174,71 @@ export async function fetchPriceAdvisoryForChat(message, formData) {
         { headers, timeout: 35000 }
       );
       const data = res.data?.data;
-      if (!data) throw new Error('No forecast data');
-      const resultObj = {
-        type: 'price_result',
-        commodity,
-        market,
-        district,
-        data,
-      };
-      priceCache.set(cacheKey, { result: resultObj, timestamp: Date.now() });
-      return resultObj;
-    } catch (e2) {
-      return null; // Backend not available, fall through to Gemini
+      if (data) {
+        priceCache.set(cacheKey, { result: data, timestamp: Date.now() });
+        return data;
+      }
+    } catch {
+      return null;
     }
   }
+  return null;
+}
+
+export async function fetchPriceAdvisoryForChat(message, formData) {
+  const { commodity, market: extractedMarket } = extractCropAndMarket(message, formData);
+  const lower = message.toLowerCase();
+
+  let requestedMarketKey = 'Kolhapur';
+  if (
+    lower.includes('sangli') ||
+    lower.includes('सांगली') ||
+    lower.includes('islampur') ||
+    lower.includes('इस्लामपूर') ||
+    extractedMarket === 'Sangli' ||
+    extractedMarket === 'Islampur'
+  ) {
+    requestedMarketKey = 'Sangli';
+  } else if (lower.includes('vadgaon') || lower.includes('वडगाव') || extractedMarket === 'Vadgaonpeth') {
+    requestedMarketKey = 'Vadgaonpeth';
+  } else if (formData?.market && String(formData.market).toLowerCase().includes('sangli')) {
+    requestedMarketKey = 'Sangli';
+  }
+
+  const marketConfigs = getMarketsForCommodity(commodity);
+
+  // Fetch both Kolhapur and Sangli concurrently so farmers get complete insight
+  const [kolhapurData, sangliData] = await Promise.all([
+    fetchSingleMarketAdvisory(commodity, marketConfigs.Kolhapur.market, marketConfigs.Kolhapur.district, formData),
+    fetchSingleMarketAdvisory(commodity, marketConfigs.Sangli.market, marketConfigs.Sangli.district, formData),
+  ]);
+
+  const markets = {};
+  if (kolhapurData) {
+    markets.Kolhapur = {
+      ...marketConfigs.Kolhapur,
+      data: kolhapurData,
+    };
+  }
+  if (sangliData) {
+    markets.Sangli = {
+      ...marketConfigs.Sangli,
+      data: sangliData,
+    };
+  }
+
+  const activeMarketObj = markets[requestedMarketKey] || markets.Kolhapur || markets.Sangli;
+  if (!activeMarketObj) return null;
+
+  return {
+    type: 'price_result',
+    commodity,
+    activeMarket: activeMarketObj.key,
+    market: activeMarketObj.market,
+    district: activeMarketObj.district,
+    data: activeMarketObj.data,
+    markets,
+  };
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -202,7 +252,7 @@ STRICT RULES:
 2. FOR NON-FARMERS: Even if a user does NOT have a farm (e.g. consumer, buyer, trader) but asks for crop/mandi prices (उदा. टोमॅटो भाव, कांदा भाव), ALWAYS provide the market price (per quintal and per kg) helpfully. Never decline price queries because the user has no farm.
 3. For strictly non-agricultural/non-food topics (e.g. movies, coding, cricket): politely decline in the user's language and redirect to agriculture/mandi topics.
 4. KEEP ANSWERS SHORT — max 3-4 bullet points or 2-3 short sentences. No long paragraphs.
-5. For price/market questions: state the APMC market price and approx per kg rate, and general trend concisely.
+5. FOR PRICE/MANDI QUESTIONS: AgriSense covers BOTH Kolhapur and Sangli APMC markets in Maharashtra (Tomato: Kolhapur and Islampur; Onion: Kolhapur and Sangli-Phale-Bhajipala). ALWAYS state the APMC rates for BOTH Kolhapur and Sangli markets (per quintal and approx per kg) and the general trend concisely. The live data card will also display both markets.
 6. Use the user's language (Marathi or English).
 7. Marathi: simple, friendly Marathi. English: plain simple English.
 8. No headers (#). Use - for bullets and **bold** for key words only.
@@ -234,7 +284,7 @@ async function callDirectGemini({ message, language = "mr", history = [] }) {
     generationConfig: {
       temperature: 0.5,
       topP: 0.85,
-      maxOutputTokens: 280,
+      maxOutputTokens: 800,
     },
   };
 

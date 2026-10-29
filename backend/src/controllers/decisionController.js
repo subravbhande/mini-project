@@ -12,10 +12,22 @@ exports.evaluateDirect = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Commodity and market are required.' });
     }
 
+    const normCrop = String(commodity).trim().toLowerCase();
+    let normMarket = String(market).trim();
+    let normDistrict = district ? String(district).trim() : undefined;
+
+    if (normMarket.toLowerCase() === 'sangli' || normMarket.toLowerCase() === 'sangli apmc') {
+      normDistrict = 'Sangli';
+      normMarket = normCrop === 'onion' ? 'Sangli-Phale-Bhajipala' : 'Islampur';
+    } else if (normMarket.toLowerCase() === 'kolhapur' || normMarket.toLowerCase() === 'kolhapur apmc') {
+      normDistrict = 'Kolhapur';
+      normMarket = 'Kolhapur';
+    }
+
     const mlDecision = await mlClient.getDecision({
-      commodity: String(commodity).toLowerCase(),
-      market: String(market),
-      district: district || undefined,
+      commodity: normCrop,
+      market: normMarket,
+      district: normDistrict,
       initial_quantity_quintals: Number(quantityQuintals || 100),
       storage_type: storageType || 'ambient',
       harvest_date: harvestDate || undefined,

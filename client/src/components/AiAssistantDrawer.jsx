@@ -8,12 +8,30 @@ import {
 import { askAgriAssistant, isPriceQuery, fetchPriceAdvisoryForChat } from '../services/assistantApi';
 
 /* ── Live Market Price Card rendered inside chat ── */
-function PriceMiniCard({ data, commodity, market, lang, theme, isFarmerIntent = false }) {
+function PriceMiniCard({
+  data,
+  commodity,
+  market,
+  lang,
+  theme,
+  isFarmerIntent = false,
+  markets = null,
+  activeMarket = 'Kolhapur',
+}) {
+  const [selectedMarketKey, setSelectedMarketKey] = useState(activeMarket || 'Kolhapur');
+  useEffect(() => {
+    if (activeMarket) setSelectedMarketKey(activeMarket);
+  }, [activeMarket]);
+
   const [showFarmerAdvice, setShowFarmerAdvice] = useState(isFarmerIntent);
   const isDark = theme === 'dark';
   const isMr = lang === 'mr';
 
-  const result = data || {};
+  const currentMarketMeta = (markets && markets[selectedMarketKey]) || null;
+  const result = currentMarketMeta?.data || data || {};
+  const currentMarketDisplayName = currentMarketMeta
+    ? (isMr ? currentMarketMeta.labelMr : currentMarketMeta.labelEn)
+    : `${market} APMC`;
   const decision = result.decision || 'SELL';
   const todayPrice =
     result.last_observed_price ||
@@ -86,9 +104,61 @@ function PriceMiniCard({ data, commodity, market, lang, theme, isFarmerIntent = 
           <span>{isMr ? 'आजचा थेट बाजारभाव' : 'Live APMC Market Price'}</span>
         </div>
         <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textAlign: 'right' }}>
-          <strong style={{ color: 'var(--text-title)' }}>{commodity}</strong> • {market} APMC
+          <strong style={{ color: 'var(--text-title)' }}>{commodity}</strong> • {currentMarketDisplayName}
         </div>
       </div>
+
+      {/* ── Market Selector Tabs (Kolhapur & Sangli) ── */}
+      {markets && Object.keys(markets).length > 1 && (
+        <div
+          style={{
+            display: 'flex',
+            gap: '4px',
+            padding: '6px 8px 0',
+            background: isDark ? 'rgba(131,170,70,0.06)' : 'rgba(65,97,27,0.03)',
+            borderBottom: `1px solid ${isDark ? 'rgba(131,170,70,0.18)' : 'rgba(65,97,27,0.09)'}`,
+          }}
+        >
+          {Object.entries(markets).map(([key, m]) => {
+            const isSelected = key === selectedMarketKey;
+            const mPrice = m.data?.last_observed_price || m.data?.price_forecast?.summary?.last_observed_price || 0;
+            const mKg = mPrice > 0 ? (mPrice / 100).toFixed(0) : '—';
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setSelectedMarketKey(key)}
+                style={{
+                  flex: '1 1 0',
+                  padding: '5px 6px',
+                  borderRadius: '8px 8px 0 0',
+                  border: 'none',
+                  borderBottom: isSelected ? '2.5px solid var(--text-emerald)' : '2.5px solid transparent',
+                  background: isSelected
+                    ? (isDark ? 'rgba(131,170,70,0.2)' : 'rgba(65,97,27,0.12)')
+                    : 'transparent',
+                  color: isSelected ? 'var(--text-emerald)' : 'var(--text-muted)',
+                  fontWeight: isSelected ? 800 : 600,
+                  fontSize: '0.73rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '2px',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <span>📍 {isMr ? m.labelMr : m.labelEn}</span>
+                </div>
+                <div style={{ fontSize: '0.67rem', color: isSelected ? 'var(--text-title)' : 'var(--text-muted)', fontWeight: 700 }}>
+                  ₹{Math.round(mPrice)} <span style={{ opacity: 0.85, fontWeight: 500 }}>(₹{mKg}/kg)</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* ── Key Market Price Stats ── */}
       <div style={{ padding: '10px 12px 6px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(95px, 1fr))', gap: '8px' }}>
@@ -273,6 +343,39 @@ function PriceMiniCard({ data, commodity, market, lang, theme, isFarmerIntent = 
 }
 
 function getPriceSpokenText(msg, isMr) {
+  // If both Kolhapur and Sangli data exist, announce both
+  if (msg.markets?.Kolhapur?.data && msg.markets?.Sangli?.data) {
+    const kD = msg.markets.Kolhapur.data;
+    const sD = msg.markets.Sangli.data;
+    const kPrice = Math.round(kD.last_observed_price || kD.price_forecast?.summary?.last_observed_price || 0);
+    const sPrice = Math.round(sD.last_observed_price || sD.price_forecast?.summary?.last_observed_price || 0);
+    const kKg = (kPrice / 100).toFixed(0);
+    const sKg = (sPrice / 100).toFixed(0);
+
+    const isTomato = String(msg.commodity || '').toLowerCase().includes('tomato') || String(msg.commodity || '').includes('टोमॅटो');
+    const sangliLabelMr = isTomato ? 'सांगली इस्लामपूर' : 'सांगली';
+    const sangliLabelEn = isTomato ? 'Sangli Islampur' : 'Sangli';
+
+    const trend = kD.price_forecast?.summary?.overall_trend || sD.price_forecast?.summary?.overall_trend || 'STABLE';
+    const trendText = isMr
+      ? trend === 'RISING'
+        ? 'बाजारात भाव वाढण्याचा अंदाज आहे.'
+        : trend === 'FALLING'
+        ? 'बाजारात भाव घसरण्याचा अंदाज आहे.'
+        : 'बाजारात भाव स्थिर राहण्याचा अंदाज आहे.'
+      : trend === 'RISING'
+      ? 'Market trend is rising.'
+      : trend === 'FALLING'
+      ? 'Market trend is falling.'
+      : 'Market trend is stable.';
+
+    if (isMr) {
+      return `${msg.commodity || 'शेतमाल'}चा आजचा थेट भाव: कोल्हापूर बाजार समितीत अंदाजे ${kPrice} रुपये प्रति क्विंटल (${kKg} रुपये किलो), आणि ${sangliLabelMr} बाजार समितीत ${sPrice} रुपये प्रति क्विंटल (${sKg} रुपये किलो) आहे. ${trendText}`;
+    } else {
+      return `Today's rate for ${msg.commodity || 'crop'} is approximately ₹${kPrice} per quintal (₹${kKg}/kg) in Kolhapur APMC, and ₹${sPrice} per quintal (₹${sKg}/kg) in ${sangliLabelEn} APMC. ${trendText}`;
+    }
+  }
+
   if (!msg.priceData) return msg.text || '';
   const d = msg.priceData;
   const price =
@@ -361,8 +464,8 @@ export default function AiAssistantDrawer({
 
   // Quick chips
   const quickPrompts = isMr
-    ? ['टोमॅटो भाव', 'कांदा बाजारभाव', 'टोमॅटो कीड', 'PM-किसान', 'ठिबक अनुदान']
-    : ['Tomato price', 'Onion market rate', 'Tomato pest control', 'PM-KISAN', 'Drip subsidy'];
+    ? ['टोमॅटो भाव (कोल्हापूर व सांगली)', 'कांदा भाव (कोल्हापूर व सांगली)', 'सांगली टोमॅटो भाव', 'टोमॅटो कीड नियंत्रण', 'PM-किसान योजना']
+    : ['Tomato price (Kolhapur & Sangli)', 'Onion price (Kolhapur & Sangli)', 'Sangli Mandi Price', 'Tomato pest control', 'PM-KISAN'];
 
   // Scroll on new message
   useEffect(() => {
@@ -463,15 +566,21 @@ export default function AiAssistantDrawer({
         const lower = text.toLowerCase();
         const farmerIntent = ['विकावा', 'राखावा', 'ठेवावा', 'कधी विकावे', 'विकू का', 'विक्री सल्ला', 'होल्ड', 'सेल', 'sell', 'hold', 'when to sell', 'timing', 'distress'].some(k => lower.includes(k));
 
-        // Show a brief text + price card together
+        const hasBoth = priceResult.markets?.Kolhapur?.data && priceResult.markets?.Sangli?.data;
         const aiMsg = {
           id: `a-${Date.now()}`, role: 'assistant', type: 'price_result',
-          text: isMr
-            ? `**${priceResult.commodity}** - **${priceResult.market}** बाजार समितीचा आजचा थेट भाव:`
-            : `Live **${priceResult.commodity}** market rate for **${priceResult.market}** APMC:`,
+          text: hasBoth
+            ? (isMr
+              ? `**${priceResult.commodity}** चे आजचे थेट APMC बाजारभाव (कोल्हापूर व सांगली):`
+              : `Live **${priceResult.commodity}** APMC rates for **Kolhapur** and **Sangli**:`)
+            : (isMr
+              ? `**${priceResult.commodity}** - **${priceResult.market}** बाजार समितीचा आजचा थेट भाव:`
+              : `Live **${priceResult.commodity}** market rate for **${priceResult.market}** APMC:`),
           priceData: priceResult.data,
           commodity: priceResult.commodity,
           market: priceResult.market,
+          activeMarket: priceResult.activeMarket,
+          markets: priceResult.markets,
           isFarmerIntent: farmerIntent,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         };
@@ -665,6 +774,8 @@ export default function AiAssistantDrawer({
                       data={msg.priceData}
                       commodity={msg.commodity}
                       market={msg.market}
+                      activeMarket={msg.activeMarket}
+                      markets={msg.markets}
                       lang={lang}
                       theme={theme}
                       isFarmerIntent={msg.isFarmerIntent}

@@ -211,6 +211,13 @@ class PriceModel:
         c_clean = crop.strip().lower()
         m_raw = market.strip()
 
+        # Crop-aware Sangli district market resolution
+        if m_raw.lower() in ["sangli", "apmc sangli", "sangli apmc"]:
+            if c_clean == "tomato":
+                return c_clean, "Islampur", "Sangli"
+            elif c_clean == "onion":
+                return c_clean, "Sangli-Phale-Bhajipala", "Sangli"
+
         # Check alias map
         matched_market = m_raw
         if district:

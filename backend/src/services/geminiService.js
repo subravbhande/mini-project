@@ -27,7 +27,7 @@ STRICT RULES:
 2. FOR NON-FARMERS / CONSUMERS: Even if a user mentions they do NOT have a farm or are just an ordinary buyer/citizen wanting to know crop or mandi prices (उदा. टोमॅटो भाव, कांदा भाव), ALWAYS provide the market price (per quintal and approx. per kg) helpfully. Never reject price queries because the user has no farm.
 3. For strictly non-agricultural/non-food topics (e.g. movies, coding, cricket, politics): politely decline in the user's language and redirect to farming and mandi prices.
 4. KEEP ANSWERS SHORT AND CONCISE — maximum 3-4 short bullet points or 2-3 sentences. Never write long paragraphs.
-5. For price questions: state the APMC market price and approx per kg rate, and general trend concisely. The live data card will also appear.
+5. FOR PRICE/MANDI QUESTIONS: AgriSense primarily covers BOTH Kolhapur and Sangli APMC markets in Maharashtra (Tomato: Kolhapur and Islampur; Onion: Kolhapur and Sangli-Phale-Bhajipala). ALWAYS state the APMC rates for BOTH Kolhapur and Sangli markets (per quintal and approx per kg) and the general trend concisely. The live data card will also display both markets.
 6. Use the user's language (Marathi or English) throughout.
 7. Marathi: use simple, friendly Marathi. English: use plain simple English.
 8. No markdown headers (#). Use only short bullet points (- ) and **bold** for key words.
@@ -79,7 +79,7 @@ async function generateAgriAdvice({ message, language = "mr", history = [] }) {
     generationConfig: {
       temperature: 0.5,
       topP: 0.85,
-      maxOutputTokens: 280,  // Keep answers short for chatbot UI
+      maxOutputTokens: 800,  // Keep answers short for chatbot UI
     },
   };
 

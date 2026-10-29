@@ -32,6 +32,13 @@ const STORAGE_CONFIG = {
 function getBasePrice(crop, market) {
   const cropKey = String(crop || 'tomato').toLowerCase();
   const cropTable = BASELINE_PRICES[cropKey] || BASELINE_PRICES.tomato;
+  if (cropTable[market]) return cropTable[market];
+  const mLower = String(market || '').toLowerCase();
+  if (mLower.includes('sangli') || mLower.includes('islampur')) {
+    return cropKey === 'onion' ? (cropTable['Sangli-Phale-Bhajipala'] || 1580) : (cropTable.Islampur || 980);
+  }
+  if (mLower.includes('vadgaon')) return cropTable.Vadgaonpeth || 1040;
+  if (mLower.includes('kolhapur')) return cropTable.Kolhapur || 1020;
   return cropTable[market] || cropTable.default || 1000;
 }
 
@@ -45,7 +52,19 @@ function formatDate(d) {
 function generatePriceForecast({ commodity, market, district, quantityQuintals = 50, horizonDays = 5, asOf }) {
   const normCrop = String(commodity || 'Tomato').toLowerCase();
   const cropCapitalized = normCrop.charAt(0).toUpperCase() + normCrop.slice(1);
-  const basePrice = getBasePrice(normCrop, market);
+
+  let canonicalMarket = market || 'Kolhapur';
+  let canonicalDistrict = district || 'Kolhapur';
+  const mLower = String(canonicalMarket).toLowerCase();
+  if (mLower.includes('sangli') || mLower.includes('islampur')) {
+    canonicalDistrict = 'Sangli';
+    canonicalMarket = normCrop === 'onion' ? 'Sangli-Phale-Bhajipala' : 'Islampur';
+  } else if (mLower.includes('kolhapur')) {
+    canonicalDistrict = 'Kolhapur';
+    canonicalMarket = 'Kolhapur';
+  }
+
+  const basePrice = getBasePrice(normCrop, canonicalMarket);
 
   const startDate = asOf ? new Date(asOf) : new Date();
   const dailyForecasts = [];
@@ -92,8 +111,8 @@ function generatePriceForecast({ commodity, market, district, quantityQuintals =
 
   return {
     commodity: cropCapitalized,
-    market: market || 'Kolhapur',
-    district: district || 'Kolhapur',
+    market: canonicalMarket,
+    district: canonicalDistrict,
     data_as_of: formatDate(startDate),
     days_stale: 0,
     stale: false,
@@ -315,8 +334,8 @@ function generateTimingDecision(params) {
 
   return {
     commodity: cropCapitalized,
-    market,
-    district,
+    market: priceForecast.market,
+    district: priceForecast.district,
     decision,
     sell_fraction: sellFraction,
     act_by_date: actByDate,

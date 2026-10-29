@@ -59,10 +59,20 @@ router.post("/forecast", async (req, res) => {
       }
     }
 
+    let normMarket = String(market || '').trim();
+    let normDistrict = district ? String(district).trim() : 'Kolhapur';
+    if (normMarket.toLowerCase() === 'sangli' || normMarket.toLowerCase() === 'sangli apmc') {
+      normDistrict = 'Sangli';
+      normMarket = normCommodity.toLowerCase() === 'onion' ? 'Sangli-Phale-Bhajipala' : 'Islampur';
+    } else if (normMarket.toLowerCase() === 'kolhapur' || normMarket.toLowerCase() === 'kolhapur apmc') {
+      normDistrict = 'Kolhapur';
+      normMarket = 'Kolhapur';
+    }
+
     const forecast = await mlClient.getPriceForecast({
       commodity: normCommodity,
-      market,
-      district,
+      market: normMarket,
+      district: normDistrict,
       quantity_quintals: quantity_quintals ? parseFloat(quantity_quintals) : 0,
       horizon_days: parseInt(horizon_days) || 5,
       start_date: start_date || req.body.as_of || null,
